@@ -1,0 +1,24 @@
+DispatchFlow deployment-ready revision
+
+Implemented:
+- Responsive mobile sidebar with overlay, body scroll lock, Escape close and close-on-navigation.
+- Mobile-safe notification and account/sign-out menus.
+- Mobile date inputs and dashboard date popover hardening.
+- Responsive cards, forms, tables, filters, admin settings and dispatcher controls.
+- Super Admin Consultant / Dispatcher account creation and operational controls.
+- Super Admin equipment category add/edit/deactivate/delete management.
+- Per-equipment commission percentage stored in the database.
+- Trucker equipment selection displays the applicable commission percentage.
+- Commission snapshot stored on the trucker profile when equipment is selected.
+- Production environment template and deployment guide.
+- Seed data for common equipment categories.
+
+Required local validation commands after extraction:
+1. corepack pnpm install --frozen-lockfile
+2. corepack pnpm prisma generate
+3. corepack pnpm prisma db push
+4. corepack pnpm run typecheck
+5. corepack pnpm run lint
+6. corepack pnpm build
+
+Note: dependency installation/build could not be executed inside the packaging environment because outbound npm registry access was unavailable. Run the commands above on the target machine before deployment.

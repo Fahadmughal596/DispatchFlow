@@ -1,0 +1,47 @@
+node_modules
+.next
+.env
+.env.local
+uploads/*
+!uploads/.gitkeep
+*.log
+prisma/dev.db
+.dispatchflow-setup-complete
+_patch_backups/
+TYPECHECK_ERRORS.txt
+
+# Dependencies
+node_modules/
+
+# Next.js
+.next/
+out/
+
+# Environment secrets
+.env
+.env.local
+.env.development.local
+.env.production.local
+.env.test.local
+
+# Build/cache
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# User uploads
+uploads/
+public/uploads/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Deployment
+.vercel/
