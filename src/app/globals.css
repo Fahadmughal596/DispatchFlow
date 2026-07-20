@@ -419,3 +419,236 @@ html.sidebar-open,html.sidebar-open body{overflow:hidden!important;touch-action:
     width: 100%;
   }
 }
+/* ===== Final Assigned Dispatcher CTA Enhancement ===== */
+
+body .premium-dispatcher-card-compact {
+  position: relative !important;
+  overflow: hidden !important;
+  padding: 28px 30px 30px !important;
+  border: 1px solid rgba(44, 145, 255, 0.72) !important;
+  background:
+    radial-gradient(
+      circle at 8% 20%,
+      rgba(25, 128, 255, 0.24),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at 94% 5%,
+      rgba(28, 118, 255, 0.22),
+      transparent 28%
+    ),
+    linear-gradient(
+      135deg,
+      rgba(14, 48, 101, 0.98),
+      rgba(3, 19, 47, 0.98) 68%
+    ) !important;
+  box-shadow:
+    0 22px 65px rgba(0, 75, 190, 0.28),
+    0 0 0 1px rgba(45, 145, 255, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07) !important;
+}
+
+body .premium-dispatcher-card-compact::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      105deg,
+      rgba(255, 255, 255, 0.08),
+      transparent 28%,
+      transparent 70%,
+      rgba(36, 137, 255, 0.10)
+    );
+}
+
+body .premium-dispatcher-card-compact::after {
+  content: "";
+  position: absolute;
+  width: 320px;
+  height: 320px;
+  right: -125px;
+  top: -170px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgba(25, 133, 255, 0.34),
+    transparent 68%
+  );
+}
+
+body .premium-dispatcher-card-compact .dispatcher-card-content {
+  position: relative;
+  z-index: 2;
+  display: grid !important;
+  grid-template-columns: 96px minmax(0, 1fr) !important;
+  gap: 22px !important;
+  align-items: start !important;
+  padding-right: 165px;
+}
+
+/* Bigger dispatcher profile icon */
+body .premium-dispatcher-card-compact .dispatcher-icon-wrap {
+  width: 88px !important;
+  height: 88px !important;
+  margin-top: 46px;
+  border: 1px solid rgba(74, 168, 255, 0.58) !important;
+  background:
+    radial-gradient(
+      circle at 35% 25%,
+      rgba(45, 161, 255, 0.50),
+      rgba(8, 56, 145, 0.72)
+    ) !important;
+  box-shadow:
+    0 15px 38px rgba(0, 91, 221, 0.30),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
+}
+
+body .premium-dispatcher-card-compact .dispatcher-icon-wrap svg {
+  width: 42px !important;
+  height: 42px !important;
+}
+
+/* Dispatcher name and heading */
+body .premium-dispatcher-card-compact .dispatcher-small-label {
+  color: #4aa7ff !important;
+  font-size: 0.78rem !important;
+}
+
+body .premium-dispatcher-card-compact .dispatcher-details h3 {
+  margin: 5px 0 18px !important;
+  font-size: 2rem !important;
+  color: #ffffff !important;
+  text-shadow: 0 0 24px rgba(49, 145, 255, 0.25);
+}
+
+/* Explanation across the available width */
+body .premium-dispatcher-card-compact .dispatcher-details > p {
+  max-width: 100% !important;
+  margin: 0 0 18px !important;
+  padding: 14px 0 0 !important;
+  color: #b5c8e2 !important;
+  font-size: 0.92rem !important;
+  line-height: 1.65 !important;
+}
+
+/* Spread details row across full width */
+body .premium-dispatcher-card-compact .dispatcher-profile-grid {
+  display: grid !important;
+  grid-template-columns: repeat(6, minmax(120px, 1fr)) !important;
+  gap: 12px !important;
+  width: 100% !important;
+}
+
+body .premium-dispatcher-card-compact .dispatcher-profile-grid > div {
+  min-height: 88px;
+  padding: 14px 15px !important;
+  border: 1px solid rgba(77, 150, 245, 0.23) !important;
+  border-radius: 13px !important;
+  background:
+    linear-gradient(
+      145deg,
+      rgba(18, 45, 85, 0.82),
+      rgba(7, 25, 55, 0.82)
+    ) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+body .premium-dispatcher-card-compact .dispatcher-profile-grid span {
+  color: #8da8ce !important;
+  font-size: 0.7rem !important;
+}
+
+body .premium-dispatcher-card-compact .dispatcher-profile-grid strong {
+  margin-top: 7px !important;
+  color: #ffffff !important;
+  font-size: 0.91rem !important;
+}
+
+/* Chat button on top-right */
+body .premium-dispatcher-card-compact .dispatcher-chat-button {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  width: 142px !important;
+  min-width: 142px !important;
+  height: 54px !important;
+  border: 1px solid rgba(122, 199, 255, 0.48) !important;
+  border-radius: 13px !important;
+  background: linear-gradient(
+    135deg,
+    #0868ff,
+    #1ba7ff
+  ) !important;
+  color: #ffffff !important;
+  box-shadow:
+    0 16px 38px rgba(0, 104, 255, 0.40),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24) !important;
+}
+
+body .premium-dispatcher-card-compact .dispatcher-chat-button:hover {
+  transform: translateY(-2px) scale(1.015) !important;
+  filter: brightness(1.10);
+  box-shadow:
+    0 20px 46px rgba(0, 110, 255, 0.50),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26) !important;
+}
+
+/* Tablet */
+@media (max-width: 1150px) {
+  body .premium-dispatcher-card-compact .dispatcher-profile-grid {
+    grid-template-columns: repeat(3, minmax(140px, 1fr)) !important;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  body .premium-dispatcher-card-compact {
+    padding: 20px 17px !important;
+  }
+
+  body .premium-dispatcher-card-compact .dispatcher-card-content {
+    grid-template-columns: 72px minmax(0, 1fr) !important;
+    gap: 14px !important;
+    padding-right: 0 !important;
+  }
+
+  body .premium-dispatcher-card-compact .dispatcher-icon-wrap {
+    width: 68px !important;
+    height: 68px !important;
+    margin-top: 36px;
+  }
+
+  body .premium-dispatcher-card-compact .dispatcher-icon-wrap svg {
+    width: 33px !important;
+    height: 33px !important;
+  }
+
+  body .premium-dispatcher-card-compact .dispatcher-details h3 {
+    font-size: 1.55rem !important;
+  }
+
+  body .premium-dispatcher-card-compact .dispatcher-profile-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  body .premium-dispatcher-card-compact .dispatcher-chat-button {
+    position: static !important;
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    margin-top: 4px;
+  }
+}
+
+@media (max-width: 430px) {
+  body .premium-dispatcher-card-compact .dispatcher-profile-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  body .premium-dispatcher-card-compact .dispatcher-profile-grid > div {
+    min-height: auto;
+  }
+}
