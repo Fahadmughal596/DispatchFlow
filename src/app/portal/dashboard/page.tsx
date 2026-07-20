@@ -222,17 +222,17 @@ export default async function TruckerDashboard({
         .dashboard-date-filter[open] { z-index:200; }
         .dashboard-date-popover { z-index:210; }
         .dashboard-metric-grid { position:relative; z-index:1; }
-        .premium-dispatcher-card-compact { position:relative; z-index:10; margin:18px 0 18px; padding:20px; }
+        .premium-dispatcher-card-compact { position:relative; z-index:10; margin:22px 0 18px; padding:22px 24px; border:1px solid rgba(116,157,216,.17); border-radius:17px; background:linear-gradient(145deg,rgba(8,23,49,.99),rgba(3,14,32,.97)); box-shadow:0 18px 45px rgba(0,0,0,.18); }
         .dispatcher-card-content { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:18px; align-items:center; }
-        .dispatcher-icon-wrap { position:relative; width:64px; height:64px; display:grid; place-items:center; border-radius:50%; background:linear-gradient(145deg,#eef4ff,#dbeafe); color:#2563eb; border:1px solid #bfdbfe; }
+        .dispatcher-icon-wrap { position:relative; width:64px; height:64px; display:grid; place-items:center; border-radius:50%; background:radial-gradient(circle at 35% 30%,rgba(24,134,255,.32),rgba(5,44,138,.55)); color:#36a0ff; border:1px solid rgba(24,134,255,.35); box-shadow:0 0 28px rgba(24,134,255,.16); }
         .dispatcher-icon-wrap svg { width:31px; height:31px; fill:none; stroke:currentColor; stroke-width:1.8; }
-        .dispatcher-online-dot { position:absolute; right:1px; bottom:3px; width:14px; height:14px; border-radius:50%; background:#22c55e; border:3px solid white; }
-        .dispatcher-details h3 { margin:2px 0 12px; font-size:1.35rem; line-height:1.2; color:#17233b; }
-        .dispatcher-small-label { display:block; color:#66789a; font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; }
+        .dispatcher-online-dot { position:absolute; right:1px; bottom:3px; width:14px; height:14px; border-radius:50%; background:#22d56a; border:3px solid #07152d; box-shadow:0 0 0 3px rgba(34,213,106,.14); }
+        .dispatcher-details h3 { margin:3px 0 14px; font-size:1.5rem; line-height:1.2; color:#f7fbff; letter-spacing:-.02em; }
+        .dispatcher-small-label { display:block; color:#2f8cff; font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; }
         .dispatcher-profile-grid { display:grid; grid-template-columns:repeat(5,minmax(105px,1fr)); gap:10px; }
         .dispatcher-profile-grid div { min-width:0; }
-        .dispatcher-profile-grid span { display:block; color:#8290a8; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
-        .dispatcher-profile-grid strong { display:block; margin-top:3px; color:#22304a; font-size:.83rem; overflow-wrap:anywhere; }
+        .dispatcher-profile-grid span { display:block; color:#7f91ad; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+        .dispatcher-profile-grid strong { display:block; margin-top:4px; color:#eaf2ff; font-size:.84rem; overflow-wrap:anywhere; }
         .dispatcher-chat-button { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-width:100px; }
         .dispatcher-chat-button svg { width:18px; height:18px; }
         @media (max-width:980px) {
@@ -287,7 +287,7 @@ export default async function TruckerDashboard({
             </div>
 
             <div className="dispatcher-details">
-              <span className="dispatcher-small-label">Your Dispatcher</span>
+              <span className="dispatcher-small-label">Your Dispatcher / Consultant / Copilot</span>
               <h3>{dispatcher.name}</h3>
               <div className="dispatcher-profile-grid">
                 <div><span>Expertise</span><strong>{dispatcherProfile?.specialty || "Not provided"}</strong></div>
