@@ -10,10 +10,14 @@ import { audit } from "@/lib/audit";
 const truckerOnboardingSchema = z.object({
   name: z.string().min(2).max(120),
   phone: z.string().min(5).max(40),
+  address: z.string().min(5).max(300),
+  companyName: z.string().min(2).max(190),
+  companyAddress: z.string().min(5).max(300),
+  mcDot: z.string().max(120).optional(),
   equipmentCategoryId: z.coerce.number().int().positive(),
+  numberOfTrucks: z.coerce.number().int().min(1).max(2),
   packageType: z.string().min(2).max(120),
   truckCurrentLocation: z.string().min(2).max(190),
-  companyName: z.string().max(190).optional(),
   billingMethod: z.enum(["FIXED", "PERCENTAGE"]),
   ratePercentage: z.coerce.number().min(0).max(100).optional()
 }).superRefine((data, context) => {
@@ -62,12 +66,16 @@ export async function completeTruckerOnboardingAction(formData: FormData) {
     db.truckerProfile.update({
       where: { id: user.truckerProfile.id },
       data: {
+        address: parsed.data.address,
+        companyName: parsed.data.companyName,
+        companyAddress: parsed.data.companyAddress,
+        mcDot: parsed.data.mcDot || null,
+        numberOfTrucks: parsed.data.numberOfTrucks,
         equipmentCategoryId: equipment.id,
         equipmentType: equipment.name,
         selectedCommissionBps: equipment.commissionBps,
         packageType: parsed.data.packageType,
         truckCurrentLocation: parsed.data.truckCurrentLocation,
-        companyName: parsed.data.companyName || null,
         billingMethod: parsed.data.billingMethod,
         ratePercentageBps:
           parsed.data.billingMethod === "PERCENTAGE"
@@ -101,6 +109,7 @@ export async function completeConsultantOnboardingAction(formData: FormData) {
     db.consultantProfile.upsert({
       where: { userId: user.id },
       update: {
+        phone: parsed.data.phone,
         specialty: parsed.data.specialty,
         workingHours: parsed.data.workingHours,
         timeZone: parsed.data.timeZone,
@@ -110,6 +119,7 @@ export async function completeConsultantOnboardingAction(formData: FormData) {
       },
       create: {
         userId: user.id,
+        phone: parsed.data.phone,
         specialty: parsed.data.specialty,
         workingHours: parsed.data.workingHours,
         timeZone: parsed.data.timeZone,
@@ -146,12 +156,12 @@ export async function completeConsultantProfilePopupAction(formData: FormData) {
     db.consultantProfile.upsert({
       where: { userId: user.id },
       update: {
-        specialty, workingHours, timeZone, bio,
+        phone, specialty, workingHours, timeZone, bio,
         commissionRateBps: Number.isFinite(commissionRate) ? Math.round(commissionRate * 100) : 500,
         profileCompletedAt: new Date()
       },
       create: {
-        userId: user.id, specialty, workingHours, timeZone, bio,
+        userId: user.id, phone, specialty, workingHours, timeZone, bio,
         commissionRateBps: Number.isFinite(commissionRate) ? Math.round(commissionRate * 100) : 500,
         profileCompletedAt: new Date()
       }
@@ -188,6 +198,9 @@ export async function updateTruckerProfileAction(formData: FormData) {
       where: { id: user.truckerProfile.id },
       data: {
         companyName: String(formData.get("companyName") || "").trim() || null,
+        companyAddress: String(formData.get("companyAddress") || "").trim() || null,
+        address: String(formData.get("address") || "").trim() || null,
+        numberOfTrucks: Number.isFinite(Number(formData.get("numberOfTrucks"))) ? Math.max(1, Math.round(Number(formData.get("numberOfTrucks")))) : null,
         mcDot: String(formData.get("mcDot") || "").trim() || null,
         equipmentCategoryId: equipment.id,
         equipmentType: equipment.name,
@@ -228,6 +241,7 @@ export async function updateConsultantProfileAction(formData: FormData) {
     db.consultantProfile.upsert({
       where: { userId: user.id },
       update: {
+        phone: String(formData.get("phone") || "").trim() || null,
         bio: String(formData.get("bio") || "").trim() || null,
         specialty: String(formData.get("specialty") || "").trim() || null,
         workingHours: String(formData.get("workingHours") || "").trim() || null,
@@ -237,6 +251,7 @@ export async function updateConsultantProfileAction(formData: FormData) {
       },
       create: {
         userId: user.id,
+        phone: String(formData.get("phone") || "").trim() || null,
         bio: String(formData.get("bio") || "").trim() || null,
         specialty: String(formData.get("specialty") || "").trim() || null,
         workingHours: String(formData.get("workingHours") || "").trim() || null,

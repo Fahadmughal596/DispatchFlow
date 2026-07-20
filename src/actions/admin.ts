@@ -16,6 +16,9 @@ export async function createDispatcherAction(formData: FormData) {
   const name = String(formData.get("name") || "").trim();
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const phone = String(formData.get("phone") || "").trim();
+  const specialty = String(formData.get("specialty") || "").trim();
+  const serviceDuration = String(formData.get("serviceDuration") || "").trim();
+  const initialLoadCount = Number(formData.get("initialLoadCount") || 0);
   const password = String(formData.get("password") || "");
   if (!name || !email.includes("@") || password.length < 8) {
     redirect("/super-admin/consultants?error=Enter+valid+dispatcher+details.");
@@ -31,7 +34,14 @@ export async function createDispatcherAction(formData: FormData) {
       email,
       phone: phone || null,
       passwordHash: await bcrypt.hash(password, 12),
-      consultantProfile: { create: {} }
+      consultantProfile: {
+        create: {
+          phone: phone || null,
+          specialty: specialty || null,
+          serviceDuration: serviceDuration || null,
+          initialLoadCount: Number.isFinite(initialLoadCount) ? Math.max(0, Math.round(initialLoadCount)) : 0
+        }
+      }
     }
   });
 
@@ -178,16 +188,30 @@ export async function updateDispatcherControlsAction(formData: FormData) {
   const priorityWeight = Number(formData.get("priorityWeight") || 1);
   const maxLeadCap = Number(formData.get("maxLeadCap") || 100);
   const commissionRate = Number(formData.get("commissionRate") || 5);
+  const phone = String(formData.get("phone") || "").trim();
+  const specialty = String(formData.get("specialty") || "").trim();
+  const serviceDuration = String(formData.get("serviceDuration") || "").trim();
+  const initialLoadCount = Number(formData.get("initialLoadCount") || 0);
   const status = String(formData.get("status") || "ACTIVE");
   if (!userId) return;
 
   await db.$transaction([
-    db.user.update({ where: { id: userId }, data: { status: status as "ACTIVE" | "PAUSED" | "DISABLED" } }),
+    db.user.update({
+      where: { id: userId },
+      data: {
+        status: status as "ACTIVE" | "PAUSED" | "DISABLED",
+        phone: phone || null
+      }
+    }),
     db.consultantProfile.update({
       where: { userId },
       data: {
         priorityWeight: Math.max(1, Math.round(priorityWeight)),
         maxLeadCap: Math.max(0, Math.round(maxLeadCap)),
+        phone: phone || null,
+        specialty: specialty || null,
+        serviceDuration: serviceDuration || null,
+        initialLoadCount: Number.isFinite(initialLoadCount) ? Math.max(0, Math.round(initialLoadCount)) : 0,
         commissionRateBps: Math.max(0, Math.min(10000, Math.round(commissionRate * 100))),
         isPaused: status !== "ACTIVE"
       }

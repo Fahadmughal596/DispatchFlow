@@ -108,6 +108,26 @@ export async function PortalShell({
 
   return (
     <div className={`app-shell ${isTrucker ? "trucker-shell" : isConsultant ? "consultant-shell" : ""}`}>
+      <style>{`
+        @media (min-width: 901px) {
+          .sidebar { overflow-y:hidden !important; padding-top:14px !important; padding-bottom:12px !important; }
+          .dispatchflow-brand { margin-bottom:12px !important; transform:scale(.94); transform-origin:left center; }
+          .sidebar-nav { gap:3px !important; }
+          .sidebar-nav .nav-link { min-height:36px !important; padding:7px 10px !important; gap:9px !important; font-size:.79rem !important; }
+          .sidebar-nav .nav-icon { width:24px !important; height:24px !important; }
+          .sidebar-nav .nav-label { font-size:.79rem !important; }
+          .trucker-sidebar-cards { gap:7px !important; margin-top:8px !important; }
+          .sidebar-action-card, .sidebar-help-card { padding:9px !important; gap:8px !important; }
+          .sidebar-action-card strong, .sidebar-help-card strong { font-size:.75rem !important; }
+          .sidebar-action-card small, .sidebar-help-card small { font-size:.65rem !important; line-height:1.25 !important; }
+          .sidebar-bottom { margin-top:auto !important; padding-top:8px !important; }
+          .user-mini { gap:8px !important; }
+          .user-mini .avatar { width:32px !important; height:32px !important; }
+          .user-mini strong { font-size:.76rem !important; }
+          .user-mini span { font-size:.64rem !important; }
+          .sidebar-bottom .btn { min-height:34px !important; padding:7px 10px !important; font-size:.75rem !important; }
+        }
+      `}</style>
       <aside className="sidebar" id="portal-sidebar" aria-label="Portal navigation">
         <Link className="brand dispatchflow-brand" href={isTrucker ? "/portal/dashboard" : "/"}>
           <span className="dispatchflow-logo-mark" aria-hidden="true">

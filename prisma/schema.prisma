@@ -90,36 +90,36 @@ enum AttachmentKind {
 }
 
 model User {
-  id                Int       @id @default(autoincrement())
-  role              Role
-  name              String
-  email             String    @unique
-  phone             String?
-  passwordHash      String?
-  googleSubject     String?     @unique
-  authProvider      String      @default("EMAIL")
-  status            UserStatus @default(ACTIVE)
-  emailVerifiedAt   DateTime?
-  lastLoginAt       DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id              Int        @id @default(autoincrement())
+  role            Role
+  name            String
+  email           String     @unique
+  phone           String?
+  passwordHash    String?
+  googleSubject   String?    @unique
+  authProvider    String     @default("EMAIL")
+  status          UserStatus @default(ACTIVE)
+  emailVerifiedAt DateTime?
+  lastLoginAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
-  sessions          Session[]
-  truckerProfile    TruckerProfile?
-  consultantProfile ConsultantProfile?
-  sentMessages      Message[] @relation("MessageSender")
-  messageAttachments MessageAttachment[] @relation("MessageAttachmentUploader")
-  uploadedDocuments Document[] @relation("DocumentUploader")
-  reviewedDocuments Document[] @relation("DocumentReviewer")
-  requestedDocuments DocumentRequest[] @relation("DocumentRequester")
-  createdInvoices   Invoice[] @relation("InvoiceConsultant")
-  createdLoads      Load[] @relation("LoadConsultant")
-  notifications     Notification[]
-  auditLogs         AuditLog[] @relation("AuditActor")
-  assignedTruckers  TruckerProfile[] @relation("AssignedConsultant")
-  assignedLeads     Lead[] @relation("AssignedLeadConsultant")
-  consultantConversations Conversation[] @relation("ConversationConsultant")
-  uploadedLoadDocuments LoadDocument[]
+  sessions                Session[]
+  truckerProfile          TruckerProfile?
+  consultantProfile       ConsultantProfile?
+  sentMessages            Message[]           @relation("MessageSender")
+  messageAttachments      MessageAttachment[] @relation("MessageAttachmentUploader")
+  uploadedDocuments       Document[]          @relation("DocumentUploader")
+  reviewedDocuments       Document[]          @relation("DocumentReviewer")
+  requestedDocuments      DocumentRequest[]   @relation("DocumentRequester")
+  createdInvoices         Invoice[]           @relation("InvoiceConsultant")
+  createdLoads            Load[]              @relation("LoadConsultant")
+  notifications           Notification[]
+  auditLogs               AuditLog[]          @relation("AuditActor")
+  assignedTruckers        TruckerProfile[]    @relation("AssignedConsultant")
+  assignedLeads           Lead[]              @relation("AssignedLeadConsultant")
+  consultantConversations Conversation[]      @relation("ConversationConsultant")
+  uploadedLoadDocuments   LoadDocument[]
 }
 
 model Session {
@@ -135,22 +135,25 @@ model Session {
 }
 
 model ConsultantProfile {
-  id               Int      @id @default(autoincrement())
-  userId           Int      @unique
-  bio              String?  @db.Text
-  specialty        String?
-  workingHours     String?
-  timeZone         String?
-  isPaused         Boolean  @default(false)
-  priorityWeight   Int      @default(1)
-  maxLeadCap       Int      @default(100)
-  sequencePosition Int      @default(0)
-  commissionRateBps Int     @default(500)
+  id                 Int       @id @default(autoincrement())
+  userId             Int       @unique
+  bio                String?   @db.Text
+  specialty          String?
+  phone              String?
+  serviceDuration    String?
+  initialLoadCount   Int       @default(0)
+  workingHours       String?
+  timeZone           String?
+  isPaused           Boolean   @default(false)
+  priorityWeight     Int       @default(1)
+  maxLeadCap         Int       @default(100)
+  sequencePosition   Int       @default(0)
+  commissionRateBps  Int       @default(500)
   profileCompletedAt DateTime?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 
-  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model TruckerProfile {
@@ -161,7 +164,10 @@ model TruckerProfile {
   selectedCommissionBps Int?
   truckCurrentLocation  String?
   companyName           String?
-  mcDot                  String?
+  companyAddress        String?
+  address               String?
+  numberOfTrucks        Int?
+  mcDot                 String?
   assignedConsultantId  Int?
   accountStatus         TruckerStatus @default(LEAD)
   activatedAt           DateTime?
@@ -179,17 +185,17 @@ model TruckerProfile {
   createdAt             DateTime      @default(now())
   updatedAt             DateTime      @updatedAt
 
-  user                  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  assignedConsultant    User?         @relation("AssignedConsultant", fields: [assignedConsultantId], references: [id], onDelete: SetNull)
-  equipmentCategory     EquipmentCategory? @relation(fields: [equipmentCategoryId], references: [id], onDelete: SetNull)
-  lead                  Lead?
-  conversations         Conversation[]
-  documentRequests      DocumentRequest[]
-  documents             Document[]
-  invoices              Invoice[]
-  payments              Payment[]
-  agreements            Agreement[]
-  loads                 Load[]
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignedConsultant User?              @relation("AssignedConsultant", fields: [assignedConsultantId], references: [id], onDelete: SetNull)
+  equipmentCategory  EquipmentCategory? @relation(fields: [equipmentCategoryId], references: [id], onDelete: SetNull)
+  lead               Lead?
+  conversations      Conversation[]
+  documentRequests   DocumentRequest[]
+  documents          Document[]
+  invoices           Invoice[]
+  payments           Payment[]
+  agreements         Agreement[]
+  loads              Load[]
 
   @@index([assignedConsultantId])
   @@index([equipmentCategoryId])
@@ -208,9 +214,9 @@ model Lead {
   createdAt        DateTime   @default(now())
   updatedAt        DateTime   @updatedAt
 
-  trucker          TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
-  assignedTo       User?          @relation("AssignedLeadConsultant", fields: [assignedToId], references: [id], onDelete: SetNull)
-  histories        LeadStatusHistory[]
+  trucker    TruckerProfile      @relation(fields: [truckerId], references: [id], onDelete: Cascade)
+  assignedTo User?               @relation("AssignedLeadConsultant", fields: [assignedToId], references: [id], onDelete: SetNull)
+  histories  LeadStatusHistory[]
 
   @@index([assignedToId])
   @@index([currentStatus])
@@ -224,39 +230,39 @@ model LeadStatusHistory {
   note      String?
   createdAt DateTime   @default(now())
 
-  lead      Lead       @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
 
   @@index([leadId, createdAt])
 }
 
 model Conversation {
-  id                       Int      @id @default(autoincrement())
+  id                       Int       @id @default(autoincrement())
   truckerId                Int
   consultantId             Int
   lastMessageAt            DateTime?
-  twoSidedContactValidated Boolean  @default(false)
-  createdAt                DateTime @default(now())
-  updatedAt                DateTime @updatedAt
+  twoSidedContactValidated Boolean   @default(false)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
 
-  trucker                  TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
-  consultant               User           @relation("ConversationConsultant", fields: [consultantId], references: [id], onDelete: Cascade)
-  messages                 Message[]
+  trucker    TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
+  consultant User           @relation("ConversationConsultant", fields: [consultantId], references: [id], onDelete: Cascade)
+  messages   Message[]
 
   @@unique([truckerId, consultantId])
   @@index([consultantId, lastMessageAt])
 }
 
 model Message {
-  id             Int      @id @default(autoincrement())
+  id             Int       @id @default(autoincrement())
   conversationId Int
   senderId       Int
-  body           String   @db.Text
-  sentAt         DateTime @default(now())
+  body           String    @db.Text
+  sentAt         DateTime  @default(now())
   readAt         DateTime?
 
-  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  sender         User         @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
-  attachments    MessageAttachment[]
+  conversation Conversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User                @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  attachments  MessageAttachment[]
 
   @@index([conversationId, sentAt])
 }
@@ -272,8 +278,8 @@ model MessageAttachment {
   sizeBytes    Int
   createdAt    DateTime       @default(now())
 
-  message      Message        @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  uploader     User           @relation("MessageAttachmentUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
+  message  Message @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  uploader User    @relation("MessageAttachmentUploader", fields: [uploadedById], references: [id], onDelete: Cascade)
 
   @@index([messageId])
 }
@@ -289,71 +295,71 @@ model DocumentRequest {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
-  trucker      TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
-  requester    User           @relation("DocumentRequester", fields: [requestedBy], references: [id])
-  document     Document?
+  trucker   TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
+  requester User           @relation("DocumentRequester", fields: [requestedBy], references: [id])
+  document  Document?
 
   @@unique([truckerId, type])
 }
 
 model Document {
-  id                 Int            @id @default(autoincrement())
-  truckerId          Int
-  documentRequestId  Int?           @unique
-  relatedLoadId      Int?
-  type               String
-  documentTitle      String?
-  documentNumber     String?
-  issuingAuthority   String?
-  issueDate          DateTime?
-  originalName       String
-  storagePath        String
-  mimeType           String
-  sizeBytes          Int
-  status             DocumentStatus @default(UPLOADED)
-  uploadedById       Int
-  reviewedById       Int?
-  reviewNotes        String?        @db.Text
-  expiresAt          DateTime?
-  notes              String?        @db.Text
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
+  id                Int            @id @default(autoincrement())
+  truckerId         Int
+  documentRequestId Int?           @unique
+  relatedLoadId     Int?
+  type              String
+  documentTitle     String?
+  documentNumber    String?
+  issuingAuthority  String?
+  issueDate         DateTime?
+  originalName      String
+  storagePath       String
+  mimeType          String
+  sizeBytes         Int
+  status            DocumentStatus @default(UPLOADED)
+  uploadedById      Int
+  reviewedById      Int?
+  reviewNotes       String?        @db.Text
+  expiresAt         DateTime?
+  notes             String?        @db.Text
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
 
-  trucker            TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
-  request            DocumentRequest? @relation(fields: [documentRequestId], references: [id], onDelete: SetNull)
-  relatedLoad        Load?          @relation("GeneralLoadDocument", fields: [relatedLoadId], references: [id], onDelete: SetNull)
-  uploader           User           @relation("DocumentUploader", fields: [uploadedById], references: [id])
-  reviewer           User?          @relation("DocumentReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+  trucker     TruckerProfile   @relation(fields: [truckerId], references: [id], onDelete: Cascade)
+  request     DocumentRequest? @relation(fields: [documentRequestId], references: [id], onDelete: SetNull)
+  relatedLoad Load?            @relation("GeneralLoadDocument", fields: [relatedLoadId], references: [id], onDelete: SetNull)
+  uploader    User             @relation("DocumentUploader", fields: [uploadedById], references: [id])
+  reviewer    User?            @relation("DocumentReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
 
   @@index([truckerId, type])
   @@index([relatedLoadId])
 }
 
 model Invoice {
-  id            Int           @id @default(autoincrement())
-  invoiceNumber String        @unique
-  truckerId     Int
-  consultantId  Int
-  amountCents   Int
-  currency      String        @default("USD")
-  description   String
-  notes         String?       @db.Text
-  status        InvoiceStatus @default(DRAFT)
-  invoiceDate   DateTime      @default(now())
-  dueDate       DateTime?
-  sentAt        DateTime?
-  viewedAt      DateTime?
-  paidAt        DateTime?
-  isFirstInvoice Boolean      @default(false)
-  agingStartsAt DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id             Int           @id @default(autoincrement())
+  invoiceNumber  String        @unique
+  truckerId      Int
+  consultantId   Int
+  amountCents    Int
+  currency       String        @default("USD")
+  description    String
+  notes          String?       @db.Text
+  status         InvoiceStatus @default(DRAFT)
+  invoiceDate    DateTime      @default(now())
+  dueDate        DateTime?
+  sentAt         DateTime?
+  viewedAt       DateTime?
+  paidAt         DateTime?
+  isFirstInvoice Boolean       @default(false)
+  agingStartsAt  DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
-  trucker       TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
-  consultant    User           @relation("InvoiceConsultant", fields: [consultantId], references: [id])
-  items         InvoiceItem[]
-  payment       Payment?
-  agreement     Agreement?
+  trucker    TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
+  consultant User           @relation("InvoiceConsultant", fields: [consultantId], references: [id])
+  items      InvoiceItem[]
+  payment    Payment?
+  agreement  Agreement?
 
   @@index([truckerId, status])
   @@index([consultantId, status])
@@ -367,69 +373,69 @@ model InvoiceItem {
   unitCents   Int
   totalCents  Int
 
-  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 }
 
 model Payment {
-  id                    Int           @id @default(autoincrement())
-  invoiceId             Int           @unique
-  truckerId             Int
-  amountCents           Int
-  processorFeeCents     Int           @default(0)
-  dispatcherCommissionCents Int       @default(0)
-  refundCents           Int           @default(0)
-  creditCents           Int           @default(0)
-  companyNetCents       Int
-  paymentMethod         String?
-  transactionId         String        @unique
-  status                PaymentStatus @default(PENDING)
-  paidAt                DateTime?
-  receiptNumber         String?       @unique
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
+  id                        Int           @id @default(autoincrement())
+  invoiceId                 Int           @unique
+  truckerId                 Int
+  amountCents               Int
+  processorFeeCents         Int           @default(0)
+  dispatcherCommissionCents Int           @default(0)
+  refundCents               Int           @default(0)
+  creditCents               Int           @default(0)
+  companyNetCents           Int
+  paymentMethod             String?
+  transactionId             String        @unique
+  status                    PaymentStatus @default(PENDING)
+  paidAt                    DateTime?
+  receiptNumber             String?       @unique
+  createdAt                 DateTime      @default(now())
+  updatedAt                 DateTime      @updatedAt
 
-  invoice               Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  trucker               TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
+  invoice Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  trucker TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
 
   @@index([truckerId, status])
 }
 
 model Agreement {
-  id                 Int      @id @default(autoincrement())
-  truckerId          Int
-  invoiceId          Int      @unique
-  version            String   @default("1.0")
-  signerName         String
-  acceptanceCode     String   @unique
-  signedAt           DateTime @default(now())
-  ipAddress          String?
-  deviceInfo         String?  @db.Text
-  createdAt          DateTime @default(now())
+  id             Int      @id @default(autoincrement())
+  truckerId      Int
+  invoiceId      Int      @unique
+  version        String   @default("1.0")
+  signerName     String
+  acceptanceCode String   @unique
+  signedAt       DateTime @default(now())
+  ipAddress      String?
+  deviceInfo     String?  @db.Text
+  createdAt      DateTime @default(now())
 
-  trucker            TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
-  invoice            Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  trucker TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
+  invoice Invoice        @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 }
 
 model Load {
-  id             Int        @id @default(autoincrement())
-  truckerId      Int
-  consultantId   Int
-  loadRef        String     @unique
-  pickupLocation String
-  pickupAt       DateTime?
+  id               Int        @id @default(autoincrement())
+  truckerId        Int
+  consultantId     Int
+  loadRef          String     @unique
+  pickupLocation   String
+  pickupAt         DateTime?
   deliveryLocation String
-  deliveryAt     DateTime?
-  rateCents      Int
-  broker         String?
-  status         LoadStatus @default(DRAFT)
-  notes          String?    @db.Text
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  deliveryAt       DateTime?
+  rateCents        Int
+  broker           String?
+  status           LoadStatus @default(DRAFT)
+  notes            String?    @db.Text
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
 
-  trucker        TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
-  consultant     User           @relation("LoadConsultant", fields: [consultantId], references: [id])
-  documents      LoadDocument[]
-  generalDocuments Document[]   @relation("GeneralLoadDocument")
+  trucker          TruckerProfile @relation(fields: [truckerId], references: [id], onDelete: Cascade)
+  consultant       User           @relation("LoadConsultant", fields: [consultantId], references: [id])
+  documents        LoadDocument[]
+  generalDocuments Document[]     @relation("GeneralLoadDocument")
 
   @@index([truckerId, status])
   @@index([consultantId, status])
@@ -446,22 +452,22 @@ model LoadDocument {
   uploadedById Int
   createdAt    DateTime @default(now())
 
-  load         Load     @relation(fields: [loadId], references: [id], onDelete: Cascade)
-  uploader     User     @relation(fields: [uploadedById], references: [id])
+  load     Load @relation(fields: [loadId], references: [id], onDelete: Cascade)
+  uploader User @relation(fields: [uploadedById], references: [id])
 
   @@index([loadId])
 }
 
 model Notification {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    Int
   title     String
-  message   String   @db.Text
+  message   String    @db.Text
   url       String?
   readAt    DateTime?
-  createdAt DateTime @default(now())
+  createdAt DateTime  @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, readAt, createdAt])
 }
@@ -477,24 +483,23 @@ model AuditLog {
   ipAddress  String?
   createdAt  DateTime @default(now())
 
-  actor      User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  actor User? @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
 
   @@index([entityType, entityId])
   @@index([createdAt])
 }
 
-
 model EquipmentCategory {
-  id             Int      @id @default(autoincrement())
-  name           String   @unique
-  description    String?  @db.Text
-  commissionBps  Int      @default(500)
-  isActive       Boolean  @default(true)
-  displayOrder   Int      @default(0)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  name          String   @unique
+  description   String?  @db.Text
+  commissionBps Int      @default(500)
+  isActive      Boolean  @default(true)
+  displayOrder  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  truckers       TruckerProfile[]
+  truckers TruckerProfile[]
 
   @@index([isActive, displayOrder])
 }
@@ -504,4 +509,3 @@ model AppSetting {
   value     String   @db.Text
   updatedAt DateTime @updatedAt
 }
-

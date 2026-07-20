@@ -24,7 +24,10 @@ export default async function TruckerProfilePage({ searchParams }: { searchParam
             <div className="field"><label>Full name</label><input name="name" defaultValue={user.name} required /></div>
             <div className="field"><label>Email</label><input value={user.email} disabled /></div>
             <div className="field"><label>Phone</label><input name="phone" defaultValue={user.phone || ""} /></div>
+            <div className="field"><label>Personal address</label><input name="address" defaultValue={profile.address || ""} /></div>
             <div className="field"><label>Company name</label><input name="companyName" defaultValue={profile.companyName || ""} /></div>
+            <div className="field"><label>Company address</label><input name="companyAddress" defaultValue={profile.companyAddress || ""} /></div>
+            <div className="field"><label>Number of trucks</label><input name="numberOfTrucks" type="number" min="1" defaultValue={profile.numberOfTrucks || 1} /></div>
             <div className="field"><label>MC / DOT</label><input name="mcDot" defaultValue={profile.mcDot || ""} /></div>
             <div className="field"><label>Equipment type</label><EquipmentSelect options={equipment} defaultValue={profile.equipmentCategoryId} /></div>
             <div className="field"><label>Package type</label><input name="packageType" defaultValue={profile.packageType || ""} required /></div>

@@ -13,8 +13,8 @@ export type NavItem = {
 
 function NavGlyph({ name }: { name: string }) {
   const common = {
-    width: 22,
-    height: 22,
+    width: 18,
+    height: 18,
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",

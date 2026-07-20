@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { db } from "@/lib/db";
@@ -139,7 +138,7 @@ export default async function TruckerDashboard({
     db.truckerProfile.findUnique({
       where: { id: profile.id },
       include: {
-        assignedConsultant: { include: { consultantProfile: true } },
+        assignedConsultant: { include: { consultantProfile: true, _count: { select: { createdLoads: true } } } },
         lead: true,
         invoices: { orderBy: { createdAt: "desc" }, take: 6 },
         loads: { orderBy: { createdAt: "desc" }, take: 5 },
@@ -192,6 +191,19 @@ export default async function TruckerDashboard({
   const documentsComplete = missingDocuments === 0;
   const activeComplete = profile.accountStatus === "ACTIVE";
   const latestLoad = full.loads[0];
+  const dispatcher = full.assignedConsultant;
+  const dispatcherProfile = dispatcher?.consultantProfile;
+  const dispatcherOnline = Boolean(
+    dispatcher?.lastLoginAt && Date.now() - dispatcher.lastLoginAt.getTime() <= 15 * 60 * 1000
+  );
+  const dispatcherStatus = dispatcherProfile?.isPaused || dispatcher?.status === "PAUSED"
+    ? "Paused"
+    : dispatcher?.status === "DISABLED"
+      ? "Disabled"
+      : dispatcherOnline
+        ? "Online"
+        : "Active";
+  const dispatcherTotalLoads = (dispatcherProfile?.initialLoadCount || 0) + (dispatcher?._count.createdLoads || 0);
 
   const journey = [
     { label: "Signup", state: "Complete", complete: true, current: false, href: "/portal/profile" },
@@ -203,38 +215,42 @@ export default async function TruckerDashboard({
   return (
     <>
       <style>{`
-        .trucker-dashboard-hero { position: relative; overflow: visible; }
-        .dashboard-range-controls { position: relative; z-index: 30; }
-        .dashboard-date-filter { position: relative; z-index: 40; }
-        .dashboard-date-filter[open] { z-index: 200; }
-        .dashboard-date-popover { z-index: 210; }
-        .dashboard-metric-grid { position: relative; z-index: 1; }
-        .premium-dispatcher-card-compact { position: relative; z-index: 10; margin: 18px 0 22px; padding: 16px 18px; }
-        .premium-dispatcher-card-compact .dispatcher-card-content { display: flex; align-items: center; gap: 14px; }
-        .premium-dispatcher-card-compact .dispatcher-portrait-wrap { flex: 0 0 auto; }
-        .premium-dispatcher-card-compact .dispatcher-portrait { width: 58px; height: 58px; border-radius: 50%; object-fit: cover; }
-        .premium-dispatcher-card-compact .dispatcher-details { flex: 1; min-width: 0; }
-        .premium-dispatcher-card-compact .dispatcher-details h3 { margin: 2px 0 5px; font-size: 1rem; }
-        .dispatcher-small-label { display: block; color: #8aa8d6; font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
-        .premium-dispatcher-card-compact .dispatcher-availability { font-size: .8rem; }
-        .premium-dispatcher-card-compact .dispatcher-chat-button { flex: 0 0 auto; min-width: 92px; padding: 10px 14px; }
-        @media (max-width: 768px) {
-          .trucker-dashboard-hero { height: auto !important; min-height: 0 !important; overflow: visible !important; padding-bottom: 20px; }
-          .dashboard-range-controls { position: relative !important; width: 100%; margin-top: 22px; margin-bottom: 18px; z-index: 30; }
-          .range-tabs { width: 100%; }
-          .dashboard-date-filter { position: relative !important; width: 100%; margin-top: 14px; margin-bottom: 0; z-index: 40; }
-          .dashboard-date-filter summary { width: 100%; min-height: 58px; }
-          .dashboard-date-popover { position: absolute; top: calc(100% + 8px); left: 0; right: 0; width: 100%; }
-          .premium-dispatcher-card-compact { margin: 14px 0 20px; padding: 14px; }
-          .premium-dispatcher-card-compact .dispatcher-card-content { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
-          .premium-dispatcher-card-compact .dispatcher-portrait { width: 50px; height: 50px; }
-          .premium-dispatcher-card-compact .dispatcher-chat-button { min-width: auto; padding: 9px 12px; }
-          .premium-dispatcher-card-compact .dispatcher-chat-button svg { width: 18px; height: 18px; }
+        .trucker-dashboard-hero { position:relative; overflow:visible; }
+        .dashboard-filter-row { display:flex; justify-content:space-between; align-items:center; gap:16px; margin:0 0 20px; position:relative; z-index:30; }
+        .dashboard-range-controls { display:flex; align-items:center; justify-content:space-between; gap:16px; width:100%; }
+        .dashboard-date-filter { position:relative; z-index:40; }
+        .dashboard-date-filter[open] { z-index:200; }
+        .dashboard-date-popover { z-index:210; }
+        .dashboard-metric-grid { position:relative; z-index:1; }
+        .premium-dispatcher-card-compact { position:relative; z-index:10; margin:18px 0 18px; padding:20px; }
+        .dispatcher-card-content { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:18px; align-items:center; }
+        .dispatcher-icon-wrap { position:relative; width:64px; height:64px; display:grid; place-items:center; border-radius:50%; background:linear-gradient(145deg,#eef4ff,#dbeafe); color:#2563eb; border:1px solid #bfdbfe; }
+        .dispatcher-icon-wrap svg { width:31px; height:31px; fill:none; stroke:currentColor; stroke-width:1.8; }
+        .dispatcher-online-dot { position:absolute; right:1px; bottom:3px; width:14px; height:14px; border-radius:50%; background:#22c55e; border:3px solid white; }
+        .dispatcher-details h3 { margin:2px 0 12px; font-size:1.35rem; line-height:1.2; color:#17233b; }
+        .dispatcher-small-label { display:block; color:#66789a; font-size:.72rem; font-weight:800; text-transform:uppercase; letter-spacing:.08em; }
+        .dispatcher-profile-grid { display:grid; grid-template-columns:repeat(5,minmax(105px,1fr)); gap:10px; }
+        .dispatcher-profile-grid div { min-width:0; }
+        .dispatcher-profile-grid span { display:block; color:#8290a8; font-size:.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; }
+        .dispatcher-profile-grid strong { display:block; margin-top:3px; color:#22304a; font-size:.83rem; overflow-wrap:anywhere; }
+        .dispatcher-chat-button { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-width:100px; }
+        .dispatcher-chat-button svg { width:18px; height:18px; }
+        @media (max-width:980px) {
+          .dispatcher-profile-grid { grid-template-columns:repeat(3,minmax(110px,1fr)); }
         }
-        @media (max-width: 430px) {
-          .premium-dispatcher-card-compact .dispatcher-card-content { grid-template-columns: 46px minmax(0, 1fr); }
-          .premium-dispatcher-card-compact .dispatcher-chat-button { grid-column: 1 / -1; width: 100%; justify-content: center; }
-          .premium-dispatcher-card-compact .dispatcher-portrait { width: 46px; height: 46px; }
+        @media (max-width:768px) {
+          .trucker-dashboard-hero { height:auto !important; min-height:0 !important; padding-bottom:14px; }
+          .dispatcher-card-content { grid-template-columns:52px minmax(0,1fr); }
+          .dispatcher-icon-wrap { width:52px; height:52px; }
+          .dispatcher-chat-button { grid-column:1/-1; width:100%; }
+          .dispatcher-profile-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+          .dashboard-filter-row, .dashboard-range-controls { flex-direction:column; align-items:stretch; }
+          .range-tabs { width:100%; }
+          .dashboard-date-filter, .dashboard-date-filter summary { width:100%; }
+          .dashboard-date-popover { left:0; right:0; width:100%; }
+        }
+        @media (max-width:430px) {
+          .dispatcher-profile-grid { grid-template-columns:1fr; }
         }
       `}</style>
 
@@ -260,6 +276,41 @@ export default async function TruckerDashboard({
           </span>
         </div>
 
+      </section>
+
+      {dispatcher ? (
+        <section className="premium-dispatcher-card premium-dispatcher-card-compact">
+          <div className="dispatcher-card-content">
+            <div className="dispatcher-icon-wrap" aria-label="Assigned dispatcher">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+              {dispatcherOnline ? <span className="dispatcher-online-dot" aria-label="Dispatcher online" /> : null}
+            </div>
+
+            <div className="dispatcher-details">
+              <span className="dispatcher-small-label">Your Dispatcher</span>
+              <h3>{dispatcher.name}</h3>
+              <div className="dispatcher-profile-grid">
+                <div><span>Expertise</span><strong>{dispatcherProfile?.specialty || "Not provided"}</strong></div>
+                <div><span>Contact Number</span><strong>{dispatcherProfile?.phone || dispatcher.phone || "Not provided"}</strong></div>
+                <div><span>Status</span><strong>{dispatcherStatus}</strong></div>
+                <div><span>Total Loads</span><strong>{dispatcherTotalLoads}</strong></div>
+                <div><span>Service Duration</span><strong>{dispatcherProfile?.serviceDuration || "Not provided"}</strong></div>
+              </div>
+            </div>
+
+            <Link className="dispatcher-chat-button btn btn-primary" href="/portal/chat">
+              <QuickIcon kind="chat" />
+              Chat
+            </Link>
+          </div>
+        </section>
+      ) : (
+        <div className="premium-empty-alert premium-dispatcher-card-compact">
+          Your dispatcher will be assigned shortly.
+        </div>
+      )}
+
+      <section className="dashboard-filter-row" aria-label="Dashboard filters">
         <div className="dashboard-range-controls">
           <div className="range-tabs" aria-label="Dashboard period">
             <Link className={selectedRange.key === "week" ? "active" : ""} href="?period=week">This Week</Link>
@@ -281,39 +332,6 @@ export default async function TruckerDashboard({
           </details>
         </div>
       </section>
-
-      {full.assignedConsultant ? (
-        <section className="premium-dispatcher-card premium-dispatcher-card-compact">
-          <div className="dispatcher-card-content">
-            <div className="dispatcher-portrait-wrap">
-              <Image
-                className="dispatcher-portrait"
-                src="/images/dispatcher-avatar.webp"
-                alt={`${full.assignedConsultant.name}, assigned dispatcher`}
-                width={72}
-                height={72}
-                priority
-              />
-              <span className="dispatcher-online-dot" aria-label="Available for portal chat" />
-            </div>
-
-            <div className="dispatcher-details">
-              <span className="dispatcher-small-label">Your Dispatcher</span>
-              <h3>{full.assignedConsultant.name}</h3>
-              <span className="dispatcher-availability"><i /> Available for portal chat</span>
-            </div>
-
-            <Link className="dispatcher-chat-button" href="/portal/chat">
-              <QuickIcon kind="chat" />
-              Chat
-            </Link>
-          </div>
-        </section>
-      ) : (
-        <div className="premium-empty-alert premium-dispatcher-card-compact">
-          Your dispatcher will be assigned shortly.
-        </div>
-      )}
 
       <section className="dashboard-metric-grid" aria-label="Performance summary">
         <article className="dashboard-metric-card">
