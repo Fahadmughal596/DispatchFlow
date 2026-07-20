@@ -216,9 +216,33 @@ export default async function TruckerDashboard({
     <>
       <style>{`
         .trucker-dashboard-hero { position:relative; overflow:visible; }
-        .dashboard-filter-row { display:flex; justify-content:space-between; align-items:center; gap:16px; margin:0 0 20px; position:relative; z-index:30; }
-        .dashboard-range-controls { display:flex; align-items:center; justify-content:space-between; gap:16px; width:100%; }
-        .dashboard-date-filter { position:relative; z-index:40; }
+        .dashboard-filter-row {
+          display:block;
+          width:100%;
+          margin:0 0 24px;
+          position:relative;
+          z-index:30;
+        }
+        .dashboard-range-controls {
+          position:static !important;
+          inset:auto !important;
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:16px;
+          width:100%;
+        }
+        .dashboard-range-controls .range-tabs {
+          flex:0 1 520px;
+          width:min(100%,520px);
+        }
+        .dashboard-range-controls .range-tabs a {
+          flex:1 1 0;
+          min-width:0;
+          white-space:nowrap;
+        }
+        .dashboard-date-filter { position:relative; z-index:40; flex:0 0 auto; min-width:220px; }
+        .dashboard-date-filter > summary { justify-content:space-between; width:100%; }
         .dashboard-date-filter[open] { z-index:200; }
         .dashboard-date-popover { z-index:210; }
         .dashboard-metric-grid { position:relative; z-index:1; }
@@ -244,9 +268,9 @@ export default async function TruckerDashboard({
           .dispatcher-icon-wrap { width:52px; height:52px; }
           .dispatcher-chat-button { grid-column:1/-1; width:100%; }
           .dispatcher-profile-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
-          .dashboard-filter-row, .dashboard-range-controls { flex-direction:column; align-items:stretch; }
-          .range-tabs { width:100%; }
-          .dashboard-date-filter, .dashboard-date-filter summary { width:100%; }
+          .dashboard-range-controls { flex-direction:column; align-items:stretch; }
+          .dashboard-range-controls .range-tabs { width:100%; max-width:none; }
+          .dashboard-date-filter, .dashboard-date-filter summary { width:100%; min-width:0; }
           .dashboard-date-popover { left:0; right:0; width:100%; }
         }
         @media (max-width:430px) {

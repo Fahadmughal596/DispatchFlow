@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { completeTruckerOnboardingAction } from "@/actions/profile";
 import { EquipmentSelect, type EquipmentOption } from "@/components/equipment-select";
 
@@ -20,6 +20,7 @@ export function TruckerProfilePopup({
   error?: string;
   equipmentOptions: EquipmentOption[];
 }) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [open, setOpen] = useState(false);
   const [step, setStep] = useState(1);
   const [truckCount, setTruckCount] = useState(1);
@@ -32,6 +33,27 @@ export function TruckerProfilePopup({
   function dismissPopup() {
     window.sessionStorage.setItem(DISMISS_KEY, "1");
     setOpen(false);
+  }
+
+  function validateStep() {
+    const form = formRef.current;
+    if (!form) return false;
+    const panel = form.querySelector<HTMLElement>(`[data-step="${step}"]`);
+    if (!panel) return false;
+    const fields = Array.from(panel.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>("input, select, textarea"));
+    for (const field of fields) {
+      if (!field.checkValidity()) {
+        field.reportValidity();
+        field.focus();
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function nextStep() {
+    if (!validateStep()) return;
+    setStep((value) => Math.min(TOTAL_STEPS, value + 1));
   }
 
   if (!open) return null;
@@ -97,9 +119,9 @@ export function TruckerProfilePopup({
 
         {error ? <div className="alert alert-error">{error}</div> : null}
 
-        <form action={completeTruckerOnboardingAction}>
+        <form ref={formRef} action={completeTruckerOnboardingAction}>
           <div className="profile-step-panel">
-            <div className="form-grid" hidden={step !== 1}>
+            <div className="form-grid" data-step="1" hidden={step !== 1}>
                 <div className="field">
                   <label>Email</label>
                   <input value={email} disabled />
@@ -118,7 +140,7 @@ export function TruckerProfilePopup({
                 </div>
               </div>
 
-            <div className="form-grid" hidden={step !== 2}>
+            <div className="form-grid" data-step="2" hidden={step !== 2}>
                 <div className="field">
                   <label>Company name</label>
                   <input name="companyName" required />
@@ -148,7 +170,7 @@ export function TruckerProfilePopup({
                 </div>
               </div>
 
-            <div hidden={step !== 3}>
+            <div data-step="3" hidden={step !== 3}>
                 <div className="form-grid">
                   <div className="field">
                     <label>Equipment type</label>
@@ -194,7 +216,7 @@ export function TruckerProfilePopup({
               ) : null}
 
               {step < TOTAL_STEPS ? (
-                <button className="btn btn-primary" type="button" onClick={() => setStep((value) => value + 1)}>
+                <button className="btn btn-primary" type="button" onClick={nextStep}>
                   Next
                 </button>
               ) : (
