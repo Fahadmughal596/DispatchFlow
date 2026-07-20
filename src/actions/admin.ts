@@ -19,6 +19,7 @@ export async function createDispatcherAction(formData: FormData) {
   const specialty = String(formData.get("specialty") || "").trim();
   const serviceDuration = String(formData.get("serviceDuration") || "").trim();
   const initialLoadCount = Number(formData.get("initialLoadCount") || 0);
+  const pastRevenue = Number(formData.get("pastRevenue") || 0);
   const password = String(formData.get("password") || "");
   if (!name || !email.includes("@") || password.length < 8) {
     redirect("/super-admin/consultants?error=Enter+valid+dispatcher+details.");
@@ -39,7 +40,8 @@ export async function createDispatcherAction(formData: FormData) {
           phone: phone || null,
           specialty: specialty || null,
           serviceDuration: serviceDuration || null,
-          initialLoadCount: Number.isFinite(initialLoadCount) ? Math.max(0, Math.round(initialLoadCount)) : 0
+          initialLoadCount: Number.isFinite(initialLoadCount) ? Math.max(0, Math.round(initialLoadCount)) : 0,
+          pastRevenueCents: Number.isFinite(pastRevenue) ? Math.max(0, Math.round(pastRevenue * 100)) : 0
         }
       }
     }
@@ -192,6 +194,7 @@ export async function updateDispatcherControlsAction(formData: FormData) {
   const specialty = String(formData.get("specialty") || "").trim();
   const serviceDuration = String(formData.get("serviceDuration") || "").trim();
   const initialLoadCount = Number(formData.get("initialLoadCount") || 0);
+  const pastRevenue = Number(formData.get("pastRevenue") || 0);
   const status = String(formData.get("status") || "ACTIVE");
   if (!userId) return;
 
@@ -212,6 +215,7 @@ export async function updateDispatcherControlsAction(formData: FormData) {
         specialty: specialty || null,
         serviceDuration: serviceDuration || null,
         initialLoadCount: Number.isFinite(initialLoadCount) ? Math.max(0, Math.round(initialLoadCount)) : 0,
+        pastRevenueCents: Number.isFinite(pastRevenue) ? Math.max(0, Math.round(pastRevenue * 100)) : 0,
         commissionRateBps: Math.max(0, Math.min(10000, Math.round(commissionRate * 100))),
         isPaused: status !== "ACTIVE"
       }

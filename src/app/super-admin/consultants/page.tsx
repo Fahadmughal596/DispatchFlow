@@ -28,6 +28,7 @@ export default async function AdminConsultantsPage({ searchParams }: { searchPar
               <div className="field"><label>Expertise</label><input name="specialty" placeholder="Dry van, reefer, flatbed..." /></div>
               <div className="field"><label>Service duration</label><input name="serviceDuration" placeholder="e.g. 4 years" /></div>
               <div className="field"><label>Initial total loads</label><input name="initialLoadCount" type="number" min="0" defaultValue="0" /></div>
+              <div className="field"><label>Past revenue (USD)</label><input name="pastRevenue" type="number" min="0" step="0.01" defaultValue="0" /></div>
               <div className="field"><label>Temporary password</label><input name="password" type="password" minLength={8} required /></div>
             </div>
             <button className="btn btn-primary">Create Consultant / Dispatcher</button>
@@ -63,6 +64,7 @@ export default async function AdminConsultantsPage({ searchParams }: { searchPar
               <div className="field"><label>Expertise</label><input name="specialty" defaultValue={consultant.consultantProfile?.specialty || ""} /></div>
               <div className="field"><label>Service duration</label><input name="serviceDuration" defaultValue={consultant.consultantProfile?.serviceDuration || ""} /></div>
               <div className="field"><label>Initial total loads</label><input name="initialLoadCount" type="number" min="0" defaultValue={consultant.consultantProfile?.initialLoadCount || 0} /></div>
+              <div className="field"><label>Past revenue (USD)</label><input name="pastRevenue" type="number" min="0" step="0.01" defaultValue={(consultant.consultantProfile?.pastRevenueCents || 0) / 100} /></div>
               <div className="field"><label>Priority weight</label><input name="priorityWeight" type="number" min="1" defaultValue={consultant.consultantProfile?.priorityWeight || 1} /></div>
               <div className="field"><label>Maximum lead cap</label><input name="maxLeadCap" type="number" min="0" defaultValue={consultant.consultantProfile?.maxLeadCap || 100} /></div>
               <div className="field"><label>Commission %</label><input name="commissionRate" type="number" min="0" max="100" step="0.01" defaultValue={(consultant.consultantProfile?.commissionRateBps || 500) / 100} /></div>
