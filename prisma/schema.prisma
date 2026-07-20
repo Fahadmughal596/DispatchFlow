@@ -166,6 +166,7 @@ model TruckerProfile {
   companyName           String?
   companyAddress        String?
   address               String?
+  profileImagePath      String?
   numberOfTrucks        Int?
   mcDot                 String?
   assignedConsultantId  Int?

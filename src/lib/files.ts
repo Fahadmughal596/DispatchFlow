@@ -142,3 +142,38 @@ export async function storedFile(storagePath: string) {
 
   return Buffer.from(arrayBuffer);
 }
+
+const PROFILE_IMAGE_EXTENSIONS = ["jpg", "jpeg", "png", "webp"] as const;
+const MAX_PROFILE_IMAGE_BYTES = 5 * 1024 * 1024;
+
+export async function saveProfileImage(file: File, folder: string) {
+  const ext = extension(file.name);
+
+  if (!PROFILE_IMAGE_EXTENSIONS.includes(ext as (typeof PROFILE_IMAGE_EXTENSIONS)[number])) {
+    throw new Error("Profile picture must be JPG, PNG or WEBP.");
+  }
+
+  if (file.size <= 0 || file.size > MAX_PROFILE_IMAGE_BYTES) {
+    throw new Error("Profile picture must be smaller than 5MB.");
+  }
+
+  const allowedMimes = mimeMap[ext] || [];
+  if (file.type && !allowedMimes.includes(file.type)) {
+    throw new Error("Profile picture format is invalid.");
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  if (!magicValid(ext, buffer.subarray(0, 16))) {
+    throw new Error("Profile picture content does not match its extension.");
+  }
+
+  const safeFolder = normalizeFolder(folder);
+  const storagePath = `${safeFolder}/${randomUUID()}.${ext}`;
+  const blob = await put(storagePath, buffer, {
+    access: "private",
+    contentType: file.type || "application/octet-stream",
+    addRandomSuffix: false
+  });
+
+  return blob.pathname;
+}

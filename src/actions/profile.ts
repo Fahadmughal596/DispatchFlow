@@ -6,6 +6,7 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { audit } from "@/lib/audit";
+import { deleteStoredFile, saveProfileImage } from "@/lib/files";
 
 const truckerOnboardingSchema = z.object({
   name: z.string().min(2).max(120),
@@ -178,6 +179,28 @@ export async function updateTruckerProfileAction(formData: FormData) {
   const user = await requireUser();
   if (user.role !== "TRUCKER" || !user.truckerProfile) redirect("/");
 
+  const numberOfTrucks = Number(formData.get("numberOfTrucks") || 1);
+  if (!Number.isFinite(numberOfTrucks) || numberOfTrucks < 1) {
+    redirect("/portal/profile?error=Enter+a+valid+number+of+trucks.");
+  }
+  if (numberOfTrucks > 2) {
+    redirect("/portal/profile?error=For+more+than+2+trucks,+please+contact+our+team.");
+  }
+
+  const profileImage = formData.get("profileImage");
+  let nextProfileImagePath = user.truckerProfile.profileImagePath;
+  if (profileImage instanceof File && profileImage.size > 0) {
+    try {
+      nextProfileImagePath = await saveProfileImage(
+        profileImage,
+        `profiles/truckers/${user.id}`
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Profile picture upload failed.";
+      redirect(`/portal/profile?error=${encodeURIComponent(message)}`);
+    }
+  }
+
   const billingMethod = String(formData.get("billingMethod") || "FIXED") as "FIXED" | "PERCENTAGE";
   const ratePercentage = Number(formData.get("ratePercentage") || 0);
   const equipmentCategoryId = Number(formData.get("equipmentCategoryId"));
@@ -200,7 +223,8 @@ export async function updateTruckerProfileAction(formData: FormData) {
         companyName: String(formData.get("companyName") || "").trim() || null,
         companyAddress: String(formData.get("companyAddress") || "").trim() || null,
         address: String(formData.get("address") || "").trim() || null,
-        numberOfTrucks: Number.isFinite(Number(formData.get("numberOfTrucks"))) ? Math.max(1, Math.round(Number(formData.get("numberOfTrucks")))) : null,
+        profileImagePath: nextProfileImagePath,
+        numberOfTrucks: Math.round(numberOfTrucks),
         mcDot: String(formData.get("mcDot") || "").trim() || null,
         equipmentCategoryId: equipment.id,
         equipmentType: equipment.name,
@@ -218,6 +242,13 @@ export async function updateTruckerProfileAction(formData: FormData) {
       }
     })
   ]);
+
+  if (
+    nextProfileImagePath &&
+    nextProfileImagePath !== user.truckerProfile.profileImagePath
+  ) {
+    await deleteStoredFile(user.truckerProfile.profileImagePath);
+  }
 
   revalidatePath("/portal/profile");
   revalidatePath("/portal/dashboard");
