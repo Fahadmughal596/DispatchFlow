@@ -142,7 +142,6 @@ model ConsultantProfile {
   phone              String?
   serviceDuration    String?
   initialLoadCount   Int       @default(0)
-  pastRevenueCents   Int       @default(0)
   workingHours       String?
   timeZone           String?
   isPaused           Boolean   @default(false)

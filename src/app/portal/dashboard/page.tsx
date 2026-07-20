@@ -96,17 +96,13 @@ function MetricIcon({ kind }: { kind: "revenue" | "loads" | "average" }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M17 6.5c0-1.7-2.2-3-5-3s-5 1.3-5 3 2.2 3 5 3 5 1.3 5 3-2.2 3-5 3-5-1.3-5-3"/></svg>;
 }
 
-function QuickIcon({ kind }: { kind: "chat" | "documents" | "invoices" | "revenue" }) {
+function QuickIcon({ kind }: { kind: "chat" | "documents" | "invoices" }) {
   if (kind === "documents") {
     return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z"/><path d="M7 13h10M7 16h7"/></svg>;
   }
 
   if (kind === "invoices") {
     return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h9l3 3v15H6z"/><path d="M14 3v4h4M9 12h6M9 16h6"/></svg>;
-  }
-
-  if (kind === "revenue") {
-    return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M17 6.5c0-1.7-2.2-3-5-3s-5 1.3-5 3 2.2 3 5 3 5 1.3 5 3-2.2 3-5 3-5-1.3-5-3"/></svg>;
   }
 
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a4 4 0 0 1-4 4H8l-5 3 1.5-4.5A8 8 0 1 1 21 15Z"/></svg>;
@@ -137,9 +133,7 @@ export default async function TruckerDashboard({
     previousLoadRevenue,
     previousLoadCount,
     dueInvoiceCount,
-    dueInvoiceTotal,
-    dispatcherCompletedRevenue,
-    dispatcherCompletedLoads
+    dueInvoiceTotal
   ] = await Promise.all([
     db.truckerProfile.findUnique({
       where: { id: profile.id },
@@ -149,9 +143,7 @@ export default async function TruckerDashboard({
         invoices: { orderBy: { createdAt: "desc" }, take: 6 },
         loads: { orderBy: { createdAt: "desc" }, take: 5 },
         documents: true,
-        conversations: true,
-        agreements: { orderBy: { createdAt: "desc" }, take: 1 },
-        payments: { orderBy: { createdAt: "desc" }, take: 1 }
+        conversations: true
       }
     }),
     db.equipmentCategory.findMany({
@@ -185,13 +177,6 @@ export default async function TruckerDashboard({
     db.invoice.aggregate({
       where: { truckerId: profile.id, status: { in: ["SENT", "VIEWED", "UNPAID", "OVERDUE"] } },
       _sum: { amountCents: true }
-    }),
-    db.load.aggregate({
-      where: { consultantId: profile.assignedConsultantId || -1, status: "COMPLETED" },
-      _sum: { rateCents: true }
-    }),
-    db.load.count({
-      where: { consultantId: profile.assignedConsultantId || -1, status: "COMPLETED" }
     })
   ]);
 
@@ -219,12 +204,6 @@ export default async function TruckerDashboard({
         ? "Online"
         : "Active";
   const dispatcherTotalLoads = (dispatcherProfile?.initialLoadCount || 0) + (dispatcher?._count.createdLoads || 0);
-  const dispatcherPastRevenueCents = (dispatcherProfile?.pastRevenueCents || 0) + (dispatcherCompletedRevenue._sum.rateCents || 0);
-  const dispatcherAverageRevenueCents = dispatcherCompletedLoads ? Math.round((dispatcherCompletedRevenue._sum.rateCents || 0) / dispatcherCompletedLoads) : 0;
-  const profileComplete = Boolean(profile.profileCompletedAt);
-  const agreementComplete = Boolean(full.agreements[0]);
-  const paymentComplete = Boolean(full.payments[0]);
-  const firstLoadComplete = Boolean(full.loads.length);
 
   const journey = [
     { label: "Signup", state: "Complete", complete: true, current: false, href: "/portal/profile" },
@@ -237,9 +216,33 @@ export default async function TruckerDashboard({
     <>
       <style>{`
         .trucker-dashboard-hero { position:relative; overflow:visible; }
-        .dashboard-filter-row { display:flex; justify-content:space-between; align-items:center; gap:16px; margin:0 0 20px; position:relative; z-index:30; }
-        .dashboard-range-controls { display:flex; align-items:center; justify-content:space-between; gap:16px; width:100%; }
-        .dashboard-date-filter { position:relative; z-index:40; }
+        .dashboard-filter-row {
+          display:block;
+          width:100%;
+          margin:0 0 24px;
+          position:relative;
+          z-index:30;
+        }
+        .dashboard-range-controls {
+          position:static !important;
+          inset:auto !important;
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:16px;
+          width:100%;
+        }
+        .dashboard-range-controls .range-tabs {
+          flex:0 1 520px;
+          width:min(100%,520px);
+        }
+        .dashboard-range-controls .range-tabs a {
+          flex:1 1 0;
+          min-width:0;
+          white-space:nowrap;
+        }
+        .dashboard-date-filter { position:relative; z-index:40; flex:0 0 auto; min-width:220px; }
+        .dashboard-date-filter > summary { justify-content:space-between; width:100%; }
         .dashboard-date-filter[open] { z-index:200; }
         .dashboard-date-popover { z-index:210; }
         .dashboard-metric-grid { position:relative; z-index:1; }
@@ -256,25 +259,7 @@ export default async function TruckerDashboard({
         .dispatcher-profile-grid strong { display:block; margin-top:4px; color:#eaf2ff; font-size:.84rem; overflow-wrap:anywhere; }
         .dispatcher-chat-button { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-width:100px; }
         .dispatcher-chat-button svg { width:18px; height:18px; }
-
-        .premium-dispatcher-card-compact { border-color:rgba(45,156,255,.45); background:linear-gradient(135deg,rgba(7,31,72,.98),rgba(4,18,42,.98)); box-shadow:0 24px 70px rgba(0,73,170,.24), inset 0 0 0 1px rgba(74,174,255,.08); }
-        .premium-dispatcher-card-compact::before { content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; background:radial-gradient(circle at 15% 10%,rgba(39,145,255,.17),transparent 38%); }
-        .dispatcher-details, .dispatcher-icon-wrap, .dispatcher-chat-button { position:relative; z-index:1; }
-        .dashboard-quick-grid { grid-template-columns:repeat(4,minmax(0,1fr)); }
-        .dashboard-quick-card.revenue { border-color:rgba(32,196,124,.3); background:linear-gradient(145deg,rgba(5,52,46,.88),rgba(4,25,35,.95)); }
-        .dashboard-quick-card.revenue .quick-icon { color:#31d398; background:rgba(49,211,152,.12); }
-        .checkpoint-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin:22px 0; }
-        .checkpoint-card { display:flex; flex-direction:column; gap:12px; min-height:190px; padding:20px; border:1px solid rgba(116,157,216,.18); border-radius:17px; background:linear-gradient(145deg,rgba(8,23,49,.97),rgba(3,14,32,.96)); }
-        .checkpoint-top { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-        .checkpoint-number { display:grid; place-items:center; width:34px; height:34px; border-radius:50%; background:rgba(40,128,255,.13); color:#59a9ff; font-weight:900; }
-        .checkpoint-status { font-size:.72rem; font-weight:800; padding:6px 9px; border-radius:999px; background:rgba(245,158,11,.12); color:#f7b955; }
-        .checkpoint-card.complete .checkpoint-status { background:rgba(34,197,94,.12); color:#49d985; }
-        .checkpoint-card h3 { margin:0; color:#f7fbff; font-size:1rem; }
-        .checkpoint-card p { margin:0; color:#8fa0bb; font-size:.84rem; line-height:1.55; flex:1; }
-        .checkpoint-card .btn { width:100%; }
         @media (max-width:980px) {
-          .dashboard-quick-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
-          .checkpoint-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
           .dispatcher-profile-grid { grid-template-columns:repeat(3,minmax(110px,1fr)); }
         }
         @media (max-width:768px) {
@@ -283,11 +268,10 @@ export default async function TruckerDashboard({
           .dispatcher-icon-wrap { width:52px; height:52px; }
           .dispatcher-chat-button { grid-column:1/-1; width:100%; }
           .dispatcher-profile-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
-          .dashboard-filter-row, .dashboard-range-controls { flex-direction:column; align-items:stretch; }
-          .range-tabs { width:100%; }
-          .dashboard-date-filter, .dashboard-date-filter summary { width:100%; }
+          .dashboard-range-controls { flex-direction:column; align-items:stretch; }
+          .dashboard-range-controls .range-tabs { width:100%; max-width:none; }
+          .dashboard-date-filter, .dashboard-date-filter summary { width:100%; min-width:0; }
           .dashboard-date-popover { left:0; right:0; width:100%; }
-          .dashboard-quick-grid, .checkpoint-grid { grid-template-columns:1fr; }
         }
         @media (max-width:430px) {
           .dispatcher-profile-grid { grid-template-columns:1fr; }
@@ -327,7 +311,7 @@ export default async function TruckerDashboard({
             </div>
 
             <div className="dispatcher-details">
-              <span className="dispatcher-small-label">Your Assigned Dispatcher</span>
+              <span className="dispatcher-small-label">Your Dispatcher / Consultant / Copilot</span>
               <h3>{dispatcher.name}</h3>
               <div className="dispatcher-profile-grid">
                 <div><span>Expertise</span><strong>{dispatcherProfile?.specialty || "Not provided"}</strong></div>
@@ -425,11 +409,6 @@ export default async function TruckerDashboard({
           <span><strong>Chat</strong><small>Message your dispatcher</small></span>
           <b aria-hidden="true">›</b>
         </Link>
-        <article className="dashboard-quick-card revenue">
-          <span className="quick-icon"><QuickIcon kind="revenue" /></span>
-          <span><strong>Dispatcher Past Revenue</strong><small>{money(dispatcherPastRevenueCents)} · {dispatcherCompletedLoads} completed loads · {money(dispatcherAverageRevenueCents)} avg</small></span>
-          <b aria-hidden="true">✓</b>
-        </article>
         <Link className="dashboard-quick-card documents" href="/portal/documents">
           <span className="quick-icon"><QuickIcon kind="documents" /></span>
           <span><strong>Documents</strong><small>{missingDocuments ? `${missingDocuments} mandatory file${missingDocuments === 1 ? "" : "s"} missing` : "All mandatory documents complete"}</small></span>
@@ -440,25 +419,6 @@ export default async function TruckerDashboard({
           <span><strong>Invoices</strong><small>{dueInvoiceCount ? `${dueInvoiceCount} due · ${money(dueInvoiceTotal._sum.amountCents || 0)}` : "No due invoices"}</small></span>
           <b aria-hidden="true">›</b>
         </Link>
-      </section>
-
-
-      <section className="checkpoint-grid" aria-label="Account checkpoints">
-        {[
-          { title: "Complete Profile", description: "Add personal, company and equipment details so your dispatcher can work with accurate information.", complete: profileComplete, href: "/portal/profile", action: "Open Profile" },
-          { title: "Contact Dispatcher", description: "Start a two-way conversation and confirm how you prefer to communicate about loads.", complete: contactComplete, href: "/portal/chat", action: "Open Chat" },
-          { title: "Upload Documents", description: missingDocuments ? `${missingDocuments} required document${missingDocuments === 1 ? " is" : "s are"} still missing.` : "All required documents are uploaded and ready for review.", complete: documentsComplete, href: "/portal/documents", action: "Manage Documents" },
-          { title: "Sign Agreement", description: "Review and acknowledge your service agreement before activation.", complete: agreementComplete, href: "/portal/agreement", action: "Open Agreement" },
-          { title: "Complete Payment", description: dueInvoiceCount ? `${dueInvoiceCount} due invoice${dueInvoiceCount === 1 ? "" : "s"} require attention.` : "No due invoice is currently blocking your account.", complete: paymentComplete || dueInvoiceCount === 0, href: "/portal/payments?view=due", action: "View Payments" },
-          { title: "First Load", description: firstLoadComplete ? "Your load activity has started. Track current and completed loads here." : "Your first assigned load will appear once onboarding is complete.", complete: firstLoadComplete, href: "/portal/loads", action: "View Loads" }
-        ].map((checkpoint, index) => (
-          <article className={`checkpoint-card ${checkpoint.complete ? "complete" : ""}`} key={checkpoint.title}>
-            <div className="checkpoint-top"><span className="checkpoint-number">{checkpoint.complete ? "✓" : index + 1}</span><span className="checkpoint-status">{checkpoint.complete ? "Complete" : "Action Required"}</span></div>
-            <h3>{checkpoint.title}</h3>
-            <p>{checkpoint.description}</p>
-            <Link className="btn btn-secondary btn-sm" href={checkpoint.href}>{checkpoint.action}</Link>
-          </article>
-        ))}
       </section>
 
       <section className="dashboard-lower-grid">
