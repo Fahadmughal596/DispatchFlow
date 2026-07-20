@@ -261,3 +261,62 @@ html.sidebar-open,html.sidebar-open body{overflow:hidden!important;touch-action:
     position: static;
   }
 }
+
+/* ===== Trucker dashboard clarity pass ===== */
+.dashboard-section-intro{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:16px;
+  margin:26px 0 12px;
+}
+.dashboard-section-intro h2{
+  margin:0;
+  font-size:1.15rem;
+  color:#f7fbff;
+}
+.dashboard-section-intro p{
+  margin:5px 0 0;
+  max-width:760px;
+  color:#8fa1b8;
+  font-size:.82rem;
+  line-height:1.55;
+}
+.dashboard-section-kicker{
+  display:block;
+  margin-bottom:5px;
+  color:#2f8cff;
+  font-size:.68rem;
+  font-weight:800;
+  text-transform:uppercase;
+  letter-spacing:.1em;
+}
+.dashboard-card-help{
+  display:block;
+  margin-top:5px;
+  color:#7f91ad;
+  font-size:.72rem;
+  line-height:1.45;
+}
+.dispatcher-purpose{
+  margin:0 0 14px;
+  color:#9eb0c8;
+  font-size:.8rem;
+  line-height:1.55;
+}
+.premium-dispatcher-card-compact{
+  border-color:rgba(30,125,255,.34)!important;
+  box-shadow:0 18px 48px rgba(0,58,160,.16), inset 0 0 42px rgba(20,105,255,.035)!important;
+}
+@media(max-width:760px){
+  .dashboard-section-intro{
+    display:block;
+    margin-top:22px;
+  }
+  .dashboard-section-intro h2{
+    font-size:1.02rem;
+  }
+  .dashboard-section-intro p{
+    font-size:.77rem;
+  }
+}

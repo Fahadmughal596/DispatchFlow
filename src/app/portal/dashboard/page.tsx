@@ -4,7 +4,6 @@ import { db } from "@/lib/db";
 import { documentChecklist } from "@/lib/required-documents";
 import { Flash } from "@/components/flash";
 import { dateTime, money } from "@/lib/utils";
-import { TruckerProfilePopup } from "@/components/trucker-profile-popup";
 
 const DAY = 24 * 60 * 60 * 1000;
 
@@ -125,7 +124,6 @@ export default async function TruckerDashboard({
 
   const [
     full,
-    equipmentCategories,
     checklist,
     todayActivity,
     currentLoadRevenue,
@@ -145,11 +143,6 @@ export default async function TruckerDashboard({
         documents: true,
         conversations: true
       }
-    }),
-    db.equipmentCategory.findMany({
-      where: { isActive: true },
-      orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
-      select: { id: true, name: true, commissionBps: true }
     }),
     documentChecklist(profile.id),
     db.auditLog.findMany({
@@ -204,6 +197,7 @@ export default async function TruckerDashboard({
         ? "Online"
         : "Active";
   const dispatcherTotalLoads = (dispatcherProfile?.initialLoadCount || 0) + (dispatcher?._count.createdLoads || 0);
+  const dispatcherPastRevenueCents = 0;
 
   const journey = [
     { label: "Signup", state: "Complete", complete: true, current: false, href: "/portal/profile" },
@@ -259,6 +253,15 @@ export default async function TruckerDashboard({
         .dispatcher-profile-grid strong { display:block; margin-top:4px; color:#eaf2ff; font-size:.84rem; overflow-wrap:anywhere; }
         .dispatcher-chat-button { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-width:100px; }
         .dispatcher-chat-button svg { width:18px; height:18px; }
+
+        .dashboard-section-intro { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin:26px 0 12px; }
+        .dashboard-section-intro h2 { margin:0; font-size:1.15rem; color:#f7fbff; }
+        .dashboard-section-intro p { margin:5px 0 0; max-width:760px; color:#8fa1b8; font-size:.82rem; line-height:1.55; }
+        .dashboard-section-kicker { display:block; margin-bottom:5px; color:#2f8cff; font-size:.68rem; font-weight:800; text-transform:uppercase; letter-spacing:.1em; }
+        .dashboard-card-help { display:block; margin-top:5px; color:#7f91ad; font-size:.72rem; line-height:1.45; }
+        .dispatcher-purpose { margin:0 0 14px; color:#9eb0c8; font-size:.8rem; line-height:1.55; }
+        .dispatcher-profile-grid { grid-template-columns:repeat(6,minmax(105px,1fr)); }
+
         @media (max-width:980px) {
           .dispatcher-profile-grid { grid-template-columns:repeat(3,minmax(110px,1fr)); }
         }
@@ -278,29 +281,27 @@ export default async function TruckerDashboard({
         }
       `}</style>
 
-      {!profile.profileCompletedAt ? (
-        <TruckerProfilePopup
-          name={user.name}
-          email={user.email}
-          phone={user.phone}
-          error={query.profileError}
-          equipmentOptions={equipmentCategories}
-        />
-      ) : null}
-
       <Flash success={query.success} />
 
       <section className="trucker-dashboard-hero">
         <div className="trucker-hero-copy">
           <span className="trucker-hero-kicker">Trucker Portal</span>
           <h1>Welcome, {user.name.split(" ")[0]} <span aria-hidden="true">👋</span></h1>
-          <p>Let&apos;s keep your business moving.</p>
+          <p>Track your dispatcher, business performance, onboarding progress, and daily portal activity from one place.</p>
           <span className={`account-status-pill ${activeComplete ? "active" : "onboarding"}`}>
             {activeComplete ? "Active client" : "Account setup in progress"}
           </span>
         </div>
 
       </section>
+
+      <div className="dashboard-section-intro">
+        <div>
+          <span className="dashboard-section-kicker">Your support team</span>
+          <h2>Assigned Dispatcher</h2>
+          <p>Your dispatcher manages load coordination, communication, and day-to-day dispatch support for your business.</p>
+        </div>
+      </div>
 
       {dispatcher ? (
         <section className="premium-dispatcher-card premium-dispatcher-card-compact">
@@ -313,12 +314,14 @@ export default async function TruckerDashboard({
             <div className="dispatcher-details">
               <span className="dispatcher-small-label">Your Dispatcher / Consultant / Copilot</span>
               <h3>{dispatcher.name}</h3>
+              <p className="dispatcher-purpose">Review your dispatcher&apos;s experience and reach them directly whenever you need help with loads or coordination.</p>
               <div className="dispatcher-profile-grid">
                 <div><span>Expertise</span><strong>{dispatcherProfile?.specialty || "Not provided"}</strong></div>
                 <div><span>Contact Number</span><strong>{dispatcherProfile?.phone || dispatcher.phone || "Not provided"}</strong></div>
                 <div><span>Status</span><strong>{dispatcherStatus}</strong></div>
                 <div><span>Total Loads</span><strong>{dispatcherTotalLoads}</strong></div>
                 <div><span>Service Duration</span><strong>{dispatcherProfile?.serviceDuration || "Not provided"}</strong></div>
+                <div><span>Past Revenue</span><strong>{money(dispatcherPastRevenueCents)}</strong></div>
               </div>
             </div>
 
@@ -333,6 +336,14 @@ export default async function TruckerDashboard({
           Your dispatcher will be assigned shortly.
         </div>
       )}
+
+      <div className="dashboard-section-intro">
+        <div>
+          <span className="dashboard-section-kicker">Reporting period</span>
+          <h2>Performance Filters</h2>
+          <p>Choose a period or custom date range to update the revenue, loads, and average load value shown below.</p>
+        </div>
+      </div>
 
       <section className="dashboard-filter-row" aria-label="Dashboard filters">
         <div className="dashboard-range-controls">
@@ -363,6 +374,7 @@ export default async function TruckerDashboard({
           <div>
             <span className="dashboard-metric-label">Revenue Generated</span>
             <strong>{money(revenueCents)}</strong>
+            <span className="dashboard-card-help">Total revenue from loads in the selected period.</span>
             <Trend value={percentageChange(revenueCents, previousRevenueCents)} />
           </div>
         </article>
@@ -372,6 +384,7 @@ export default async function TruckerDashboard({
           <div>
             <span className="dashboard-metric-label">Loads</span>
             <strong>{currentLoadCount}</strong>
+            <span className="dashboard-card-help">Number of loads handled in the selected period.</span>
             <Trend value={percentageChange(currentLoadCount, previousLoadCount)} />
           </div>
         </article>
@@ -381,10 +394,19 @@ export default async function TruckerDashboard({
           <div>
             <span className="dashboard-metric-label">Average Load Value</span>
             <strong>{money(averageLoadCents)}</strong>
+            <span className="dashboard-card-help">Average revenue generated per load.</span>
             <Trend value={percentageChange(averageLoadCents, previousAverageCents)} />
           </div>
         </article>
       </section>
+
+      <div className="dashboard-section-intro">
+        <div>
+          <span className="dashboard-section-kicker">Onboarding status</span>
+          <h2>Account Progress</h2>
+          <p>Follow these stages to understand what is complete, what is pending, and what you should do next.</p>
+        </div>
+      </div>
 
       <section className="trucker-journey-card" aria-label="Account progress">
         {journey.map((step, index) => (
@@ -403,28 +425,44 @@ export default async function TruckerDashboard({
         ))}
       </section>
 
+      <div className="dashboard-section-intro">
+        <div>
+          <span className="dashboard-section-kicker">Quick actions</span>
+          <h2>Manage Your Portal</h2>
+          <p>Use these shortcuts to communicate with your dispatcher, manage documents, and review billing.</p>
+        </div>
+      </div>
+
       <section className="dashboard-quick-grid">
         <Link className="dashboard-quick-card chat" href="/portal/chat">
           <span className="quick-icon"><QuickIcon kind="chat" /></span>
-          <span><strong>Chat</strong><small>Message your dispatcher</small></span>
+          <span><strong>Chat</strong><small>Discuss current or upcoming loads with your dispatcher.</small></span>
           <b aria-hidden="true">›</b>
         </Link>
         <Link className="dashboard-quick-card documents" href="/portal/documents">
           <span className="quick-icon"><QuickIcon kind="documents" /></span>
-          <span><strong>Documents</strong><small>{missingDocuments ? `${missingDocuments} mandatory file${missingDocuments === 1 ? "" : "s"} missing` : "All mandatory documents complete"}</small></span>
+          <span><strong>Documents</strong><small>{missingDocuments ? `${missingDocuments} required file${missingDocuments === 1 ? "" : "s"} missing. Upload them to continue onboarding.` : "All required documents are complete."}</small></span>
           <b aria-hidden="true">›</b>
         </Link>
         <Link className="dashboard-quick-card invoices" href="/portal/invoices">
           <span className="quick-icon"><QuickIcon kind="invoices" /></span>
-          <span><strong>Invoices</strong><small>{dueInvoiceCount ? `${dueInvoiceCount} due · ${money(dueInvoiceTotal._sum.amountCents || 0)}` : "No due invoices"}</small></span>
+          <span><strong>Invoices</strong><small>{dueInvoiceCount ? `${dueInvoiceCount} due · ${money(dueInvoiceTotal._sum.amountCents || 0)}. Review your billing status.` : "No due invoices. Your billing is up to date."}</small></span>
           <b aria-hidden="true">›</b>
         </Link>
       </section>
 
+      <div className="dashboard-section-intro">
+        <div>
+          <span className="dashboard-section-kicker">Latest overview</span>
+          <h2>Recent Activity & Trucker Snapshot</h2>
+          <p>See your latest portal actions and a quick summary of your company, equipment, package, and most recent load.</p>
+        </div>
+      </div>
+
       <section className="dashboard-lower-grid">
         <article className="soft-dashboard-panel">
           <div className="soft-panel-heading">
-            <div><span>Today</span><h2>Recent Portal Activity</h2></div>
+            <div><span>Today</span><h2>Recent Portal Activity</h2><p className="dashboard-card-help">Your latest uploads, messages, payments, and account updates.</p></div>
             <Link href="/portal/profile">View profile</Link>
           </div>
           <div className="premium-activity-list">
@@ -440,7 +478,7 @@ export default async function TruckerDashboard({
 
         <article className="soft-dashboard-panel">
           <div className="soft-panel-heading">
-            <div><span>Current operation</span><h2>Trucker Snapshot</h2></div>
+            <div><span>Current operation</span><h2>Trucker Snapshot</h2><p className="dashboard-card-help">A quick overview of your current business setup and latest load.</p></div>
             <Link href="/portal/loads">View loads</Link>
           </div>
           <div className="snapshot-grid">
