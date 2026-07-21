@@ -25,20 +25,15 @@ export default async function TruckerProfilePage({ searchParams }: { searchParam
       <TruckerProfileSettingsForm
         equipment={equipment}
         profile={{
-          profileImagePath: profile.profileImagePath,
           address: profile.address,
           companyName: profile.companyName,
           companyAddress: profile.companyAddress,
           numberOfTrucks: profile.numberOfTrucks,
           mcDot: profile.mcDot,
           equipmentCategoryId: profile.equipmentCategoryId,
-          packageType: profile.packageType,
           truckCurrentLocation: profile.truckCurrentLocation,
-          availability: profile.availability,
           factoringCompany: profile.factoringCompany,
           insuranceStatus: profile.insuranceStatus,
-          billingMethod: profile.billingMethod,
-          ratePercentageBps: profile.ratePercentageBps,
           preferredLanes: profile.preferredLanes,
           avoidedLanes: profile.avoidedLanes
         }}

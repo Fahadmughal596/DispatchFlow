@@ -31,6 +31,20 @@ const truckerOnboardingSchema = z.object({
   }
 });
 
+const EQUIPMENT_RATE_BPS: Record<string, number> = {
+  "dry van": 400,
+  reefer: 400,
+  flatbed: 400,
+  "power only": 400,
+  poweronly: 400,
+  hotshot: 600,
+  "box truck": 600
+};
+
+function equipmentRateBps(name: string, fallback: number) {
+  return EQUIPMENT_RATE_BPS[name.trim().toLowerCase()] ?? fallback;
+}
+
 const consultantOnboardingSchema = z.object({
   name: z.string().min(2).max(120),
   phone: z.string().min(5).max(40),
@@ -74,7 +88,7 @@ export async function completeTruckerOnboardingAction(formData: FormData) {
         numberOfTrucks: parsed.data.numberOfTrucks,
         equipmentCategoryId: equipment.id,
         equipmentType: equipment.name,
-        selectedCommissionBps: equipment.commissionBps,
+        selectedCommissionBps: equipmentRateBps(equipment.name, equipment.commissionBps),
         packageType: parsed.data.packageType,
         truckCurrentLocation: parsed.data.truckCurrentLocation,
         billingMethod: parsed.data.billingMethod,
@@ -201,8 +215,6 @@ export async function updateTruckerProfileAction(formData: FormData) {
     }
   }
 
-  const billingMethod = String(formData.get("billingMethod") || "FIXED") as "FIXED" | "PERCENTAGE";
-  const ratePercentage = Number(formData.get("ratePercentage") || 0);
   const equipmentCategoryId = Number(formData.get("equipmentCategoryId"));
   const equipment = await db.equipmentCategory.findFirst({
     where: { id: equipmentCategoryId, isActive: true }
@@ -228,16 +240,12 @@ export async function updateTruckerProfileAction(formData: FormData) {
         mcDot: String(formData.get("mcDot") || "").trim() || null,
         equipmentCategoryId: equipment.id,
         equipmentType: equipment.name,
-        selectedCommissionBps: equipment.commissionBps,
-        packageType: String(formData.get("packageType") || "").trim() || null,
+        selectedCommissionBps: equipmentRateBps(equipment.name, equipment.commissionBps),
         truckCurrentLocation: String(formData.get("truckCurrentLocation") || "").trim() || null,
-        availability: String(formData.get("availability") || "").trim() || null,
         preferredLanes: String(formData.get("preferredLanes") || "").trim() || null,
         avoidedLanes: String(formData.get("avoidedLanes") || "").trim() || null,
         factoringCompany: String(formData.get("factoringCompany") || "").trim() || null,
         insuranceStatus: String(formData.get("insuranceStatus") || "").trim() || null,
-        billingMethod: billingMethod === "PERCENTAGE" ? "PERCENTAGE" : "FIXED",
-        ratePercentageBps: billingMethod === "PERCENTAGE" && Number.isFinite(ratePercentage) ? Math.round(ratePercentage * 100) : null,
         profileCompletedAt: new Date()
       }
     })
