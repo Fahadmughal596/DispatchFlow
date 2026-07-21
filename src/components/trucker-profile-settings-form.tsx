@@ -4,6 +4,21 @@ import { useState } from "react";
 import { updateTruckerProfileAction } from "@/actions/profile";
 
 type EquipmentOption = { id: number; name: string; commissionBps: number };
+
+const EQUIPMENT_RATE_BPS: Record<string, number> = {
+  "dry van": 400,
+  reefer: 400,
+  flatbed: 400,
+  "power only": 400,
+  poweronly: 400,
+  hotshot: 600,
+  "box truck": 600
+};
+
+function equipmentRatePercent(name: string, fallbackBps: number) {
+  const bps = EQUIPMENT_RATE_BPS[name.trim().toLowerCase()] ?? fallbackBps;
+  return bps / 100;
+}
 type Props = {
   user: { name: string; email: string; phone: string | null };
   profile: {
@@ -82,7 +97,7 @@ export function TruckerProfileSettingsForm({ user, profile, equipment }: Props) 
           </div>
           <div className="form-grid">
             <div className="field"><label>Number of trucks</label><input name="numberOfTrucks" type="number" min="1" value={truckCount} onChange={(event) => setTruckCount(Number(event.target.value || 1))} /></div>
-            <div className="field"><label>Equipment type</label><select name="equipmentCategoryId" defaultValue={profile.equipmentCategoryId || ""} required><option value="" disabled>Select equipment</option>{equipment.map((item) => <option key={item.id} value={item.id}>{item.name} — {(item.commissionBps / 100).toFixed(item.commissionBps % 100 === 0 ? 0 : 2)}%</option>)}</select></div>
+            <div className="field"><label>Equipment type</label><select name="equipmentCategoryId" defaultValue={profile.equipmentCategoryId || ""} required><option value="" disabled>Select equipment</option>{equipment.map((item) => { const rate = equipmentRatePercent(item.name, item.commissionBps); return <option key={item.id} value={item.id}>{item.name} — {rate.toFixed(Number.isInteger(rate) ? 0 : 2)}%</option>; })}</select></div>
             <div className="field"><label>Truck current location</label><input name="truckCurrentLocation" defaultValue={profile.truckCurrentLocation || ""} required /></div>
           </div>
           <div className="field"><label>Preferred lanes</label><textarea name="preferredLanes" defaultValue={profile.preferredLanes || ""} /></div>

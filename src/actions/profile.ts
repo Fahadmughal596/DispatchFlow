@@ -6,7 +6,6 @@ import { z } from "zod";
 import { requireUser } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { audit } from "@/lib/audit";
-import { deleteStoredFile, saveProfileImage } from "@/lib/files";
 
 const truckerOnboardingSchema = z.object({
   name: z.string().min(2).max(120),
@@ -201,20 +200,6 @@ export async function updateTruckerProfileAction(formData: FormData) {
     redirect("/portal/profile?error=For+more+than+2+trucks,+please+contact+our+team.");
   }
 
-  const profileImage = formData.get("profileImage");
-  let nextProfileImagePath = user.truckerProfile.profileImagePath;
-  if (profileImage instanceof File && profileImage.size > 0) {
-    try {
-      nextProfileImagePath = await saveProfileImage(
-        profileImage,
-        `profiles/truckers/${user.id}`
-      );
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Profile picture upload failed.";
-      redirect(`/portal/profile?error=${encodeURIComponent(message)}`);
-    }
-  }
-
   const equipmentCategoryId = Number(formData.get("equipmentCategoryId"));
   const equipment = await db.equipmentCategory.findFirst({
     where: { id: equipmentCategoryId, isActive: true }
@@ -235,7 +220,6 @@ export async function updateTruckerProfileAction(formData: FormData) {
         companyName: String(formData.get("companyName") || "").trim() || null,
         companyAddress: String(formData.get("companyAddress") || "").trim() || null,
         address: String(formData.get("address") || "").trim() || null,
-        profileImagePath: nextProfileImagePath,
         numberOfTrucks: Math.round(numberOfTrucks),
         mcDot: String(formData.get("mcDot") || "").trim() || null,
         equipmentCategoryId: equipment.id,
@@ -251,12 +235,6 @@ export async function updateTruckerProfileAction(formData: FormData) {
     })
   ]);
 
-  if (
-    nextProfileImagePath &&
-    nextProfileImagePath !== user.truckerProfile.profileImagePath
-  ) {
-    await deleteStoredFile(user.truckerProfile.profileImagePath);
-  }
 
   revalidatePath("/portal/profile");
   revalidatePath("/portal/dashboard");
