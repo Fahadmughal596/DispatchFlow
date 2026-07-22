@@ -481,7 +481,21 @@ export default async function ConsultantDashboard({
       {!profile?.profileCompletedAt ? <ConsultantProfilePopup name={user.name} email={user.email} phone={user.phone} specialty={profile?.specialty} workingHours={profile?.workingHours} timeZone={profile?.timeZone} bio={profile?.bio} /> : null}
       <Flash success={query.success} error={query.error} />
 
-      <section
+      <section className="dispatcher-hero">
+        <div>
+          <span className="dispatcher-eyebrow">Consultant / Dispatcher workspace</span>
+          <h1>Welcome back, {user.name} <span>👋</span></h1>
+          <p>Manage assigned truckers, documents, invoices, payments and loads from one focused workspace.</p>
+          <div className="dispatcher-hero-actions"><Link className="btn btn-primary" href="/consultant/truckers">View assigned truckers</Link><Link className="btn btn-secondary" href="/consultant/loads">Create a load</Link></div>
+        </div>
+        <div className="dispatcher-profile-summary">
+          
+          <small>{profile?.specialty || "Complete your specialty"}</small>
+          <Link href="/consultant/profile">Edit profile →</Link>
+        </div>
+      </section>
+
+<section
         className="dispatcher-period-filter dispatcher-period-filter-top"
         aria-label="Dashboard reporting period"
       >
@@ -588,21 +602,7 @@ export default async function ConsultantDashboard({
         </div>
       </section>
 
-      <section className="dispatcher-hero">
-        <div>
-          <span className="dispatcher-eyebrow">Consultant / Dispatcher workspace</span>
-          <h1>Welcome back, {user.name} <span>👋</span></h1>
-          <p>Manage assigned truckers, documents, invoices, payments and loads from one focused workspace.</p>
-          <div className="dispatcher-hero-actions"><Link className="btn btn-primary" href="/consultant/truckers">View assigned truckers</Link><Link className="btn btn-secondary" href="/consultant/loads">Create a load</Link></div>
-        </div>
-        <div className="dispatcher-profile-summary">
-          
-          <small>{profile?.specialty || "Complete your specialty"}</small>
-          <Link href="/consultant/profile">Edit profile →</Link>
-        </div>
-      </section>
-
-      <section className="dispatcher-kpi-grid">
+<section className="dispatcher-kpi-grid">
         <article className="dispatcher-kpi"><span>Assigned truckers</span><strong>{assigned}</strong><small>{activeTruckers} active clients</small></article>
         <article className="dispatcher-kpi"><span>Pending invoices</span><strong>{pendingInvoices}</strong><small>{unpaidInvoices} unpaid / overdue</small></article>
         <article className="dispatcher-kpi">
