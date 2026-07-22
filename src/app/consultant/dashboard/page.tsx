@@ -35,6 +35,27 @@ function periodLabel(period: DashboardPeriod) {
   return "This Week";
 }
 
+function validDashboardDate(value?: string) {
+  if (!value) return null;
+
+  const parsed = new Date(`${value}T00:00:00`);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function dashboardEndOfDay(value: Date) {
+  const result = new Date(value);
+  result.setHours(23, 59, 59, 999);
+  return result;
+}
+
+function shortDashboardDate(value: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  }).format(value);
+}
+
 export default async function ConsultantDashboard({
   searchParams
 }: {
@@ -42,6 +63,8 @@ export default async function ConsultantDashboard({
     success?: string;
     error?: string;
     period?: string;
+    from?: string;
+    to?: string;
   }>;
 }) {
   const user = await requireRole("CONSULTANT_DISPATCHER");
@@ -54,8 +77,33 @@ export default async function ConsultantDashboard({
       ? query.period
       : "week";
 
-  const periodStart = startOfPeriod(period);
-  const selectedPeriodLabel = periodLabel(period);
+  const customFrom = validDashboardDate(query.from);
+  const customTo = validDashboardDate(query.to);
+  const hasCustomRange = Boolean(
+    customFrom &&
+    customTo &&
+    customFrom <= customTo
+  );
+
+  const periodStart =
+    hasCustomRange && customFrom
+      ? customFrom
+      : startOfPeriod(period);
+
+  const periodEnd =
+    hasCustomRange && customTo
+      ? dashboardEndOfDay(customTo)
+      : new Date();
+
+  const selectedPeriodLabel =
+    hasCustomRange && customFrom && customTo
+      ? `${shortDashboardDate(customFrom)} – ${shortDashboardDate(customTo)}`
+      : periodLabel(period);
+
+  const dateRange = {
+    gte: periodStart,
+    lte: periodEnd
+  };
 
   const [
     assigned,
@@ -71,14 +119,14 @@ export default async function ConsultantDashboard({
     db.lead.count({
       where: {
         assignedToId: user.id,
-        createdAt: { gte: periodStart }
+        createdAt: dateRange
       }
     }),
 
     db.lead.count({
       where: {
         assignedToId: user.id,
-        updatedAt: { gte: periodStart },
+        updatedAt: dateRange,
         currentStatus: {
           in: [
             "CONTACT_MADE",
@@ -95,14 +143,14 @@ export default async function ConsultantDashboard({
       where: {
         assignedConsultantId: user.id,
         accountStatus: "ACTIVE",
-        activatedAt: { gte: periodStart }
+        activatedAt: dateRange
       }
     }),
 
     db.invoice.count({
       where: {
         consultantId: user.id,
-        createdAt: { gte: periodStart },
+        createdAt: dateRange,
         status: {
           in: [
             "DRAFT",
@@ -119,14 +167,14 @@ export default async function ConsultantDashboard({
       where: {
         consultantId: user.id,
         status: "PAID",
-        paidAt: { gte: periodStart }
+        paidAt: dateRange
       }
     }),
 
     db.invoice.count({
       where: {
         consultantId: user.id,
-        createdAt: { gte: periodStart },
+        createdAt: dateRange,
         status: {
           in: ["UNPAID", "OVERDUE"]
         }
@@ -139,9 +187,7 @@ export default async function ConsultantDashboard({
           consultantId: user.id
         },
         status: "SUCCEEDED",
-        paidAt: {
-          gte: periodStart
-        }
+        paidAt: dateRange
       },
       _sum: {
         dispatcherCommissionCents: true,
@@ -152,9 +198,7 @@ export default async function ConsultantDashboard({
     db.load.count({
       where: {
         consultantId: user.id,
-        createdAt: {
-          gte: periodStart
-        }
+        createdAt: dateRange
       }
     }),
 
@@ -178,7 +222,7 @@ export default async function ConsultantDashboard({
   const latest = await db.lead.findMany({
     where: {
       assignedToId: user.id,
-      updatedAt: { gte: periodStart }
+      updatedAt: dateRange
     },
     include: { trucker: { include: { user: true, conversations: { where: { consultantId: user.id }, take: 1 }, invoices: { orderBy: { createdAt: "desc" }, take: 1 } } } },
     orderBy: { updatedAt: "desc" }, take: 6
@@ -266,10 +310,150 @@ export default async function ConsultantDashboard({
           box-shadow:0 8px 20px rgba(20,112,238,.28);
         }
 
+        .dispatcher-period-filter-top {
+          position:relative;
+          z-index:40;
+          min-height:0;
+          margin:0 0 22px;
+          padding:12px 14px;
+          border-radius:14px;
+          background:linear-gradient(
+            135deg,
+            rgba(10,39,82,.92),
+            rgba(5,24,53,.96)
+          );
+        }
+
+        .dispatcher-filter-heading {
+          min-width:155px;
+        }
+
+        .dispatcher-filter-heading span {
+          font-size:.64rem !important;
+        }
+
+        .dispatcher-filter-heading strong {
+          margin-top:2px !important;
+          font-size:.88rem !important;
+        }
+
+        .dispatcher-filter-controls {
+          display:flex;
+          align-items:center;
+          justify-content:flex-end;
+          gap:10px;
+        }
+
+        .dispatcher-period-tabs {
+          padding:4px;
+        }
+
+        .dispatcher-period-tabs a {
+          min-height:34px;
+          padding:7px 13px;
+        }
+
+        .dispatcher-custom-date {
+          position:relative;
+          z-index:80;
+        }
+
+        .dispatcher-custom-date[open] {
+          z-index:200;
+        }
+
+        .dispatcher-custom-date > summary {
+          min-height:42px;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          gap:8px;
+          padding:8px 13px;
+          cursor:pointer;
+          list-style:none;
+          border:1px solid rgba(81,151,240,.28);
+          border-radius:11px;
+          color:#d9e8ff;
+          background:rgba(4,21,48,.72);
+          font-size:.73rem;
+          font-weight:750;
+          white-space:nowrap;
+        }
+
+        .dispatcher-custom-date > summary::-webkit-details-marker {
+          display:none;
+        }
+
+        .dispatcher-custom-date > summary svg {
+          width:17px;
+          height:17px;
+          fill:none;
+          stroke:currentColor;
+          stroke-width:1.7;
+        }
+
+        .dispatcher-custom-date > summary b {
+          font-size:.8rem;
+        }
+
+        .dispatcher-date-popover {
+          position:absolute;
+          top:calc(100% + 9px);
+          right:0;
+          width:300px;
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:10px;
+          padding:15px;
+          border:1px solid rgba(75,149,239,.3);
+          border-radius:14px;
+          background:#071b3b;
+          box-shadow:0 22px 55px rgba(0,0,0,.42);
+        }
+
+        .dispatcher-date-popover .field {
+          margin:0;
+        }
+
+        .dispatcher-date-popover label {
+          font-size:.68rem;
+        }
+
+        .dispatcher-date-popover input {
+          width:100%;
+        }
+
+        .dispatcher-date-popover .btn {
+          width:100%;
+        }
+
+        .dispatcher-hero {
+          margin-top:0 !important;
+        }
+
         @media (max-width:720px) {
           .dispatcher-period-filter {
             flex-direction:column;
             align-items:stretch;
+          }
+
+          .dispatcher-filter-controls {
+            width:100%;
+            align-items:stretch;
+            flex-direction:column;
+          }
+
+          .dispatcher-custom-date,
+          .dispatcher-custom-date > summary {
+            width:100%;
+          }
+
+          .dispatcher-date-popover {
+            position:relative;
+            top:auto;
+            right:auto;
+            width:100%;
+            margin-top:9px;
           }
 
           .dispatcher-period-tabs {
@@ -297,6 +481,113 @@ export default async function ConsultantDashboard({
       {!profile?.profileCompletedAt ? <ConsultantProfilePopup name={user.name} email={user.email} phone={user.phone} specialty={profile?.specialty} workingHours={profile?.workingHours} timeZone={profile?.timeZone} bio={profile?.bio} /> : null}
       <Flash success={query.success} error={query.error} />
 
+      <section
+        className="dispatcher-period-filter dispatcher-period-filter-top"
+        aria-label="Dashboard reporting period"
+      >
+        <div className="dispatcher-filter-heading">
+          <span>Dashboard Activity</span>
+          <strong>{selectedPeriodLabel}</strong>
+        </div>
+
+        <div className="dispatcher-filter-controls">
+          <nav className="dispatcher-period-tabs">
+            <Link
+              className={
+                !hasCustomRange && period === "week"
+                  ? "active"
+                  : ""
+              }
+              href="/consultant/dashboard?period=week"
+            >
+              This Week
+            </Link>
+
+            <Link
+              className={
+                !hasCustomRange && period === "month"
+                  ? "active"
+                  : ""
+              }
+              href="/consultant/dashboard?period=month"
+            >
+              This Month
+            </Link>
+
+            <Link
+              className={
+                !hasCustomRange &&
+                period === "six-months"
+                  ? "active"
+                  : ""
+              }
+              href="/consultant/dashboard?period=six-months"
+            >
+              Last 6 Months
+            </Link>
+          </nav>
+
+          <details className="dispatcher-custom-date">
+            <summary>
+              <svg
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <rect
+                  x="3"
+                  y="5"
+                  width="18"
+                  height="16"
+                  rx="2"
+                />
+                <path d="M8 3v4M16 3v4M3 10h18" />
+              </svg>
+              <span>Custom Dates</span>
+              <b aria-hidden="true">⌄</b>
+            </summary>
+
+            <form
+              className="dispatcher-date-popover"
+              method="get"
+            >
+              <div className="field">
+                <label>From</label>
+                <input
+                  type="date"
+                  name="from"
+                  defaultValue={query.from}
+                  required
+                />
+              </div>
+
+              <div className="field">
+                <label>To</label>
+                <input
+                  type="date"
+                  name="to"
+                  defaultValue={query.to}
+                  required
+                />
+              </div>
+
+              <button
+                className="btn btn-primary btn-sm"
+                type="submit"
+              >
+                Apply Dates
+              </button>
+
+              <Link
+                className="btn btn-secondary btn-sm"
+                href="/consultant/dashboard?period=week"
+              >
+                Reset
+              </Link>
+            </form>
+          </details>
+        </div>
+      </section>
+
       <section className="dispatcher-hero">
         <div>
           <span className="dispatcher-eyebrow">Consultant / Dispatcher workspace</span>
@@ -309,41 +600,6 @@ export default async function ConsultantDashboard({
           <small>{profile?.specialty || "Complete your specialty"}</small>
           <Link href="/consultant/profile">Edit profile →</Link>
         </div>
-      </section>
-
-      <section
-        className="dispatcher-period-filter"
-        aria-label="Dashboard reporting period"
-      >
-        <div>
-          <span>Dashboard activity</span>
-          <strong>{selectedPeriodLabel}</strong>
-        </div>
-
-        <nav className="dispatcher-period-tabs">
-          <Link
-            className={period === "week" ? "active" : ""}
-            href="/consultant/dashboard?period=week"
-          >
-            This Week
-          </Link>
-
-          <Link
-            className={period === "month" ? "active" : ""}
-            href="/consultant/dashboard?period=month"
-          >
-            This Month
-          </Link>
-
-          <Link
-            className={
-              period === "six-months" ? "active" : ""
-            }
-            href="/consultant/dashboard?period=six-months"
-          >
-            Last 6 Months
-          </Link>
-        </nav>
       </section>
 
       <section className="dispatcher-kpi-grid">
