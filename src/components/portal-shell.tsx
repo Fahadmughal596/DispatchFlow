@@ -8,6 +8,7 @@ import { SidebarToggle } from "@/components/sidebar-toggle";
 import { ROLE_LABEL } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { missingDocumentSummary } from "@/lib/required-documents";
+import { money } from "@/lib/utils";
 
 function roleItems(role: Role, missingCount: number): NavItem[] {
   if (role === "TRUCKER") {
@@ -95,6 +96,32 @@ export async function PortalShell({
     orderBy: { createdAt: "desc" },
     take: 5
   });
+
+  const unpaidInvoices =
+    user.role === "TRUCKER" && user.truckerProfile
+      ? await db.invoice.findMany({
+          where: {
+            truckerId: user.truckerProfile.id,
+            status: {
+              in: ["SENT", "VIEWED", "UNPAID", "OVERDUE"]
+            }
+          },
+          select: {
+            id: true,
+            invoiceNumber: true,
+            amountCents: true
+          },
+          orderBy: {
+            createdAt: "desc"
+          }
+        })
+      : [];
+
+  const unpaidInvoiceCount = unpaidInvoices.length;
+  const unpaidInvoiceTotal = unpaidInvoices.reduce(
+    (total, invoice) => total + invoice.amountCents,
+    0
+  );
   const t2f = await db.appSetting.findUnique({ where: { key: "t2f_url" } });
   const t2fUrl = t2f?.value || process.env.T2F_URL || "https://truck2fleet.com/public/";
   const isTrucker = user.role === "TRUCKER";
@@ -192,15 +219,36 @@ export async function PortalShell({
               <summary>
                 <button className="notification-btn" type="button" aria-label="Notifications">
                   <BellIcon />
-                  {notifications.length + (summary.missingCount ? 1 : 0) > 0 ? (
+                  {notifications.length +
+                    (summary.missingCount ? 1 : 0) +
+                    (unpaidInvoiceCount ? 1 : 0) >
+                  0 ? (
                     <span className="notification-count">
-                      {notifications.length + (summary.missingCount ? 1 : 0)}
+                      {notifications.length +
+                        (summary.missingCount ? 1 : 0) +
+                        (unpaidInvoiceCount ? 1 : 0)}
                     </span>
                   ) : null}
                 </button>
               </summary>
               <div className="card notification-menu">
                 <div className="card-title"><h3>Notifications</h3></div>
+
+                {isTrucker && unpaidInvoiceCount ? (
+                  <Link
+                    className="modal-like required-alert payment-required-notification"
+                    style={{ display: "block", marginBottom: 8 }}
+                    href="/portal/payments?view=due"
+                  >
+                    <strong>Payment required</strong>
+                    <div className="text-muted text-small">
+                      {unpaidInvoiceCount} unpaid invoice
+                      {unpaidInvoiceCount === 1 ? "" : "s"} totaling{" "}
+                      {money(unpaidInvoiceTotal)}. Review and pay now.
+                    </div>
+                  </Link>
+                ) : null}
+
                 {summary.missingCount ? (
                   <Link className="modal-like required-alert" style={{ display: "block", marginBottom: 8 }} href={summary.url}>
                     <strong>Required documents missing</strong>
@@ -218,8 +266,12 @@ export async function PortalShell({
                     </button>
                   </form>
                 ))}
-                {!notifications.length && !summary.missingCount ? (
-                  <div className="text-muted text-small">No unread notifications.</div>
+                {!notifications.length &&
+                !summary.missingCount &&
+                !unpaidInvoiceCount ? (
+                  <div className="text-muted text-small">
+                    No unread notifications.
+                  </div>
                 ) : null}
               </div>
             </details>

@@ -254,6 +254,73 @@ export default async function TruckerDashboard({
         .dispatcher-chat-button { display:inline-flex; align-items:center; justify-content:center; gap:7px; min-width:100px; }
         .dispatcher-chat-button svg { width:18px; height:18px; }
 
+        .invoice-payment-required {
+          position:relative;
+          display:grid;
+          grid-template-columns:48px minmax(0,1fr) auto;
+          gap:15px;
+          align-items:center;
+          margin:18px 0 22px;
+          padding:18px 20px;
+          overflow:hidden;
+          border:1px solid rgba(255,174,67,.42);
+          border-radius:16px;
+          background:
+            radial-gradient(circle at 0% 50%,rgba(255,164,46,.17),transparent 34%),
+            linear-gradient(135deg,rgba(68,38,7,.72),rgba(28,22,18,.94));
+          box-shadow:0 16px 38px rgba(0,0,0,.18);
+        }
+
+        .invoice-payment-required::before {
+          content:"";
+          position:absolute;
+          inset:0 auto 0 0;
+          width:4px;
+          background:linear-gradient(#ffbe55,#ff7d21);
+        }
+
+        .invoice-payment-icon {
+          width:44px;
+          height:44px;
+          display:grid;
+          place-items:center;
+          border-radius:12px;
+          color:#fff;
+          background:linear-gradient(135deg,#ffad32,#ff7420);
+          box-shadow:0 10px 24px rgba(255,126,32,.24);
+          font-size:1.2rem;
+          font-weight:900;
+        }
+
+        .invoice-payment-copy strong {
+          display:block;
+          color:#fff7ea;
+          font-size:.96rem;
+        }
+
+        .invoice-payment-copy span {
+          display:block;
+          margin-top:4px;
+          color:#c9bda9;
+          font-size:.78rem;
+          line-height:1.5;
+        }
+
+        .invoice-payment-required .btn {
+          white-space:nowrap;
+        }
+
+        @media (max-width:640px) {
+          .invoice-payment-required {
+            grid-template-columns:44px minmax(0,1fr);
+          }
+
+          .invoice-payment-required .btn {
+            grid-column:1/-1;
+            width:100%;
+          }
+        }
+
         .dashboard-section-intro { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin:26px 0 12px; }
         .dashboard-section-intro h2 { margin:0; font-size:1.15rem; color:#f7fbff; }
         .dashboard-section-intro p { margin:5px 0 0; max-width:760px; color:#8fa1b8; font-size:.82rem; line-height:1.55; }
@@ -337,6 +404,34 @@ export default async function TruckerDashboard({
           Your dispatcher will be assigned shortly.
         </div>
       )}
+
+      {dueInvoiceCount ? (
+        <section
+          className="invoice-payment-required"
+          aria-label="Payment required"
+        >
+          <span className="invoice-payment-icon" aria-hidden="true">
+            $
+          </span>
+
+          <div className="invoice-payment-copy">
+            <strong>Payment Required</strong>
+            <span>
+              You have {dueInvoiceCount} unpaid invoice
+              {dueInvoiceCount === 1 ? "" : "s"} totaling{" "}
+              {money(dueInvoiceTotal._sum.amountCents || 0)}.
+              Review the invoice and complete payment.
+            </span>
+          </div>
+
+          <Link
+            className="btn btn-primary"
+            href="/portal/payments?view=due"
+          >
+            Review &amp; Pay
+          </Link>
+        </section>
+      ) : null}
 
       <div className="dashboard-section-intro">
         <div>
