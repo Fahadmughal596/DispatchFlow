@@ -304,35 +304,36 @@ export default async function TruckerDashboard({
       </div>
 
       {dispatcher ? (
-        <section className="premium-dispatcher-card premium-dispatcher-card-compact">
-          <div className="dispatcher-card-content">
-            <div className="dispatcher-icon-wrap" aria-label="Assigned dispatcher">
+        <section className="dispatcher-showcase-card" aria-label="Assigned dispatcher profile">
+          <div className="dispatcher-showcase-main">
+            <div className="dispatcher-showcase-avatar" aria-label="Assigned dispatcher">
               <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
               {dispatcherOnline ? <span className="dispatcher-online-dot" aria-label="Dispatcher online" /> : null}
             </div>
 
-            <div className="dispatcher-details">
-              <span className="dispatcher-small-label">Your Dispatcher / Consultant / Copilot</span>
+            <div className="dispatcher-showcase-identity">
+              <span className="dispatcher-showcase-label">Your Dispatcher / Consultant / Copilot</span>
               <h3>{dispatcher.name}</h3>
-              <p className="dispatcher-purpose">Review your dispatcher&apos;s experience and reach them directly whenever you need help with loads or coordination.</p>
-              <div className="dispatcher-profile-grid">
-                <div><span>Expertise</span><strong>{dispatcherProfile?.specialty || "Not provided"}</strong></div>
-                <div><span>Contact Number</span><strong>{dispatcherProfile?.phone || dispatcher.phone || "Not provided"}</strong></div>
-                <div><span>Status</span><strong>{dispatcherStatus}</strong></div>
-                <div><span>Total Loads</span><strong>{dispatcherTotalLoads}</strong></div>
-                <div><span>Service Duration</span><strong>{dispatcherProfile?.serviceDuration || "Not provided"}</strong></div>
-                <div><span>Past Revenue</span><strong>{money(dispatcherPastRevenueCents)}</strong></div>
-              </div>
+              <p>Your dedicated contact for load coordination, rate support, paperwork, and daily dispatch communication.</p>
             </div>
 
-            <Link className="dispatcher-chat-button btn btn-primary" href="/portal/chat">
+            <Link className="dispatcher-showcase-chat" href="/portal/chat">
               <QuickIcon kind="chat" />
-              Chat
+              <span>Chat</span>
             </Link>
+          </div>
+
+          <div className="dispatcher-showcase-stats">
+            <div><span>Expertise</span><strong>{dispatcherProfile?.specialty || "Not provided"}</strong></div>
+            <div><span>Contact Number</span><strong>{dispatcherProfile?.phone || dispatcher.phone || "Not provided"}</strong></div>
+            <div><span>Status</span><strong>{dispatcherStatus}</strong></div>
+            <div><span>Total Loads</span><strong>{dispatcherTotalLoads}</strong></div>
+            <div><span>Service Duration</span><strong>{dispatcherProfile?.serviceDuration || "Not provided"}</strong></div>
+            <div><span>Past Revenue</span><strong>{money(dispatcherPastRevenueCents)}</strong></div>
           </div>
         </section>
       ) : (
-        <div className="premium-empty-alert premium-dispatcher-card-compact">
+        <div className="premium-empty-alert dispatcher-showcase-card">
           Your dispatcher will be assigned shortly.
         </div>
       )}
