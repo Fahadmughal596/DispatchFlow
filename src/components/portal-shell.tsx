@@ -216,20 +216,22 @@ export async function PortalShell({
 
           <div className="top-actions">
             <details className="notification-details">
-              <summary>
-                <button className="notification-btn" type="button" aria-label="Notifications">
-                  <BellIcon />
-                  {notifications.length +
-                    (summary.missingCount ? 1 : 0) +
-                    (unpaidInvoiceCount ? 1 : 0) >
-                  0 ? (
-                    <span className="notification-count">
-                      {notifications.length +
-                        (summary.missingCount ? 1 : 0) +
-                        (unpaidInvoiceCount ? 1 : 0)}
-                    </span>
-                  ) : null}
-                </button>
+              <summary
+                className="notification-btn"
+                aria-label="Notifications"
+                title="Notifications"
+              >
+                <BellIcon />
+                {notifications.length +
+                  (summary.missingCount ? 1 : 0) +
+                  (unpaidInvoiceCount ? 1 : 0) >
+                0 ? (
+                  <span className="notification-count">
+                    {notifications.length +
+                      (summary.missingCount ? 1 : 0) +
+                      (unpaidInvoiceCount ? 1 : 0)}
+                  </span>
+                ) : null}
               </summary>
               <div className="card notification-menu">
                 <div className="card-title"><h3>Notifications</h3></div>

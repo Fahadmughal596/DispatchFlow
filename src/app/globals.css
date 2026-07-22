@@ -451,3 +451,36 @@ html.sidebar-open,html.sidebar-open body{overflow:hidden!important;touch-action:
   .dispatcher-showcase-stats>div{min-height:66px;padding:10px}
 }
 
+
+
+/* Working notification dropdown */
+.notification-details {
+  position: relative;
+}
+
+.notification-details > summary {
+  list-style: none;
+}
+
+.notification-details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.notification-details > summary.notification-btn {
+  cursor: pointer;
+  user-select: none;
+}
+
+.notification-details[open] > summary.notification-btn {
+  background: rgba(37, 99, 235, 0.14);
+  border-color: rgba(59, 130, 246, 0.38);
+}
+
+.notification-details .notification-menu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 500;
+  min-width: 320px;
+  max-width: min(390px, calc(100vw - 24px));
+}
