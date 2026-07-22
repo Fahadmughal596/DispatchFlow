@@ -95,6 +95,31 @@ function MetricIcon({ kind }: { kind: "revenue" | "loads" | "average" }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M17 6.5c0-1.7-2.2-3-5-3s-5 1.3-5 3 2.2 3 5 3 5 1.3 5 3-2.2 3-5 3-5-1.3-5-3"/></svg>;
 }
 
+const LEAD_STATUS_LABELS: Record<string, string> = {
+  LEAD_SIGNED_UP: "Lead Signed Up",
+  LEAD_ASSIGNED: "Dispatcher Assigned",
+  CONTACT_MADE: "Contact Made",
+  CONTRACT_MADE: "Agreement Completed",
+  PENDING_INVOICE: "Invoice Pending",
+  INVOICE_SENT: "Invoice Sent",
+  INVOICE_PAID: "Invoice Paid"
+};
+
+const LEAD_STATUS_ORDER = [
+  "LEAD_SIGNED_UP",
+  "LEAD_ASSIGNED",
+  "CONTACT_MADE",
+  "CONTRACT_MADE",
+  "PENDING_INVOICE",
+  "INVOICE_SENT",
+  "INVOICE_PAID"
+] as const;
+
+function leadStatusLabel(status?: string | null) {
+  if (!status) return "Lead Created";
+  return LEAD_STATUS_LABELS[status] || status.replaceAll("_", " ");
+}
+
 function QuickIcon({ kind }: { kind: "chat" | "documents" | "invoices" }) {
   if (kind === "documents") {
     return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z"/><path d="M7 13h10M7 16h7"/></svg>;
@@ -137,7 +162,13 @@ export default async function TruckerDashboard({
       where: { id: profile.id },
       include: {
         assignedConsultant: { include: { consultantProfile: true, _count: { select: { createdLoads: true } } } },
-        lead: true,
+        lead: {
+          include: {
+            histories: {
+              orderBy: { createdAt: "asc" }
+            }
+          }
+        },
         invoices: { orderBy: { createdAt: "desc" }, take: 6 },
         loads: { orderBy: { createdAt: "desc" }, take: 5 },
         documents: true,
@@ -198,6 +229,12 @@ export default async function TruckerDashboard({
         : "Active";
   const dispatcherTotalLoads = (dispatcherProfile?.initialLoadCount || 0) + (dispatcher?._count.createdLoads || 0);
   const dispatcherPastRevenueCents = 0;
+
+  const lead = full.lead;
+  const currentLeadStatus = lead?.currentStatus || "LEAD_SIGNED_UP";
+  const currentLeadIndex = LEAD_STATUS_ORDER.indexOf(
+    currentLeadStatus as (typeof LEAD_STATUS_ORDER)[number]
+  );
 
   const journey = [
     { label: "Signup", state: "Complete", complete: true, current: false, href: "/portal/profile" },
@@ -321,6 +358,172 @@ export default async function TruckerDashboard({
           }
         }
 
+        .trucker-lead-card {
+          margin:18px 0 24px;
+          padding:20px 22px;
+          border:1px solid rgba(60,144,246,.22);
+          border-radius:17px;
+          background:
+            radial-gradient(circle at 0% 0%,rgba(47,140,255,.13),transparent 35%),
+            linear-gradient(145deg,rgba(8,28,61,.98),rgba(4,18,41,.98));
+          box-shadow:0 18px 42px rgba(0,0,0,.17);
+        }
+
+        .trucker-lead-header {
+          display:flex;
+          align-items:flex-start;
+          justify-content:space-between;
+          gap:18px;
+          margin-bottom:20px;
+        }
+
+        .trucker-lead-header span {
+          display:block;
+          color:#2f8cff;
+          font-size:.68rem;
+          font-weight:800;
+          text-transform:uppercase;
+          letter-spacing:.09em;
+        }
+
+        .trucker-lead-header h2 {
+          margin:5px 0 0;
+          color:#f7fbff;
+          font-size:1.15rem;
+        }
+
+        .trucker-lead-status-badge {
+          display:inline-flex;
+          align-items:center;
+          min-height:34px;
+          padding:7px 12px;
+          border:1px solid rgba(54,161,255,.3);
+          border-radius:999px;
+          color:#d9eeff;
+          background:rgba(31,116,229,.16);
+          font-size:.73rem;
+          font-weight:800;
+          white-space:nowrap;
+        }
+
+        .trucker-lead-meta {
+          display:grid;
+          grid-template-columns:repeat(4,minmax(0,1fr));
+          gap:10px;
+          margin-bottom:20px;
+        }
+
+        .trucker-lead-meta div {
+          padding:12px 13px;
+          border:1px solid rgba(108,147,199,.13);
+          border-radius:12px;
+          background:rgba(3,15,35,.48);
+        }
+
+        .trucker-lead-meta span {
+          display:block;
+          color:#7f91ad;
+          font-size:.65rem;
+          font-weight:750;
+          text-transform:uppercase;
+          letter-spacing:.05em;
+        }
+
+        .trucker-lead-meta strong {
+          display:block;
+          margin-top:5px;
+          color:#edf5ff;
+          font-size:.82rem;
+          overflow-wrap:anywhere;
+        }
+
+        .trucker-lead-timeline {
+          display:grid;
+          grid-template-columns:repeat(7,minmax(0,1fr));
+          gap:8px;
+        }
+
+        .trucker-lead-step {
+          position:relative;
+          min-width:0;
+          padding:11px 9px;
+          border:1px solid rgba(103,135,180,.14);
+          border-radius:11px;
+          background:rgba(3,14,32,.54);
+          text-align:center;
+        }
+
+        .trucker-lead-step i {
+          width:25px;
+          height:25px;
+          display:grid;
+          place-items:center;
+          margin:0 auto 7px;
+          border-radius:50%;
+          background:#142a4d;
+          color:#7d94b7;
+          font-style:normal;
+          font-size:.68rem;
+          font-weight:900;
+        }
+
+        .trucker-lead-step span {
+          display:block;
+          color:#8092ae;
+          font-size:.63rem;
+          font-weight:700;
+          line-height:1.35;
+        }
+
+        .trucker-lead-step.complete {
+          border-color:rgba(31,184,107,.22);
+          background:rgba(12,84,52,.14);
+        }
+
+        .trucker-lead-step.complete i {
+          color:#dffff0;
+          background:#15935a;
+        }
+
+        .trucker-lead-step.current {
+          border-color:rgba(43,139,255,.42);
+          background:rgba(25,104,218,.16);
+          box-shadow:0 8px 22px rgba(18,102,223,.12);
+        }
+
+        .trucker-lead-step.current i {
+          color:#fff;
+          background:#1f7be7;
+        }
+
+        .trucker-lead-step.current span {
+          color:#dcecff;
+        }
+
+        @media (max-width:980px) {
+          .trucker-lead-meta {
+            grid-template-columns:repeat(2,minmax(0,1fr));
+          }
+
+          .trucker-lead-timeline {
+            grid-template-columns:repeat(4,minmax(0,1fr));
+          }
+        }
+
+        @media (max-width:640px) {
+          .trucker-lead-header {
+            flex-direction:column;
+          }
+
+          .trucker-lead-meta {
+            grid-template-columns:1fr;
+          }
+
+          .trucker-lead-timeline {
+            grid-template-columns:repeat(2,minmax(0,1fr));
+          }
+        }
+
         .dashboard-section-intro { display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin:26px 0 12px; }
         .dashboard-section-intro h2 { margin:0; font-size:1.15rem; color:#f7fbff; }
         .dashboard-section-intro p { margin:5px 0 0; max-width:760px; color:#8fa1b8; font-size:.82rem; line-height:1.55; }
@@ -360,6 +563,66 @@ export default async function TruckerDashboard({
           </span>
         </div>
 
+      </section>
+
+      <div className="dashboard-section-intro">
+        <div>
+          <span className="dashboard-section-kicker">Lead journey</span>
+          <h2>Your Lead Status</h2>
+          <p>Track your signup, dispatcher assignment, contact, agreement, invoice, and activation progress.</p>
+        </div>
+      </div>
+
+      <section className="trucker-lead-card" aria-label="Lead status">
+        <div className="trucker-lead-header">
+          <div>
+            <span>Current stage</span>
+            <h2>{leadStatusLabel(currentLeadStatus)}</h2>
+          </div>
+
+          <strong className="trucker-lead-status-badge">
+            {leadStatusLabel(currentLeadStatus)}
+          </strong>
+        </div>
+
+        <div className="trucker-lead-meta">
+          <div>
+            <span>Lead ID</span>
+            <strong>{lead ? `#${lead.id}` : "Not available"}</strong>
+          </div>
+
+          <div>
+            <span>Created</span>
+            <strong>{lead ? dateTime(lead.createdAt) : "Not available"}</strong>
+          </div>
+
+          <div>
+            <span>Source</span>
+            <strong>{lead?.source?.replaceAll("_", " ") || "Portal signup"}</strong>
+          </div>
+
+          <div>
+            <span>Assigned Dispatcher</span>
+            <strong>{dispatcher?.name || "Waiting for assignment"}</strong>
+          </div>
+        </div>
+
+        <div className="trucker-lead-timeline">
+          {LEAD_STATUS_ORDER.map((status, index) => {
+            const complete = currentLeadIndex >= index;
+            const current = currentLeadIndex === index;
+
+            return (
+              <div
+                className={`trucker-lead-step ${complete ? "complete" : ""} ${current ? "current" : ""}`}
+                key={status}
+              >
+                <i>{complete ? "✓" : index + 1}</i>
+                <span>{leadStatusLabel(status)}</span>
+              </div>
+            );
+          })}
+        </div>
       </section>
 
       <div className="dashboard-section-intro">
