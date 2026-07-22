@@ -431,6 +431,58 @@ export default async function ConsultantDashboard({
           margin-top:0 !important;
         }
 
+        /* Final dispatcher filter alignment */
+        .dispatcher-hero {
+          margin-bottom:18px !important;
+        }
+
+        .dispatcher-period-filter-top {
+          width:100%;
+          box-sizing:border-box;
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:18px;
+          margin:0 0 22px;
+          padding:12px 14px;
+        }
+
+        .dispatcher-filter-heading {
+          flex:0 0 auto;
+          display:flex;
+          flex-direction:column;
+          justify-content:center;
+          min-width:180px;
+        }
+
+        .dispatcher-filter-controls {
+          flex:1;
+          min-width:0;
+          display:flex;
+          align-items:center;
+          justify-content:flex-end;
+          gap:10px;
+          flex-wrap:wrap;
+        }
+
+        .dispatcher-period-tabs {
+          display:flex;
+          align-items:center;
+          justify-content:flex-end;
+          flex-wrap:wrap;
+          margin:0;
+        }
+
+        .dispatcher-custom-date {
+          flex:0 0 auto;
+        }
+
+        .dispatcher-custom-date > summary {
+          height:42px;
+          min-height:42px;
+          box-sizing:border-box;
+        }
+
         @media (max-width:720px) {
           .dispatcher-period-filter {
             flex-direction:column;
