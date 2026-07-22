@@ -140,28 +140,6 @@ export async function truckerUploadOtherDocumentAction(formData: FormData) {
   redirect("/portal/documents?success=Additional+document+uploaded.");
 }
 
-export async function dispatcherUploadDocumentAction(formData: FormData) {
-  const user = await requireUser();
-  if (user.role !== "CONSULTANT_DISPATCHER") redirect("/");
-  const truckerId = Number(formData.get("truckerId"));
-  const trucker = await db.truckerProfile.findFirst({ where: { id: truckerId, assignedConsultantId: user.id }, include: { user: true } });
-  if (!trucker) redirect("/consultant/documents?error=Assigned+trucker+not+found.");
-  const file = formData.get("file");
-  if (!(file instanceof File)) redirect("/consultant/documents?error=Choose+a+file.");
-  try {
-    const isOther = String(formData.get("documentMode")) === "OTHER";
-    const document = isOther
-      ? await createOtherDocument(user.id, trucker.id, Object.fromEntries(formData), file)
-      : await upsertRequiredDocument(user.id, trucker.id, Object.fromEntries(formData), file);
-    await notifyDocumentUpload(user.id, trucker, document, true);
-  } catch (error) {
-    redirect(`/consultant/documents?error=${encodeURIComponent(error instanceof Error ? error.message : "Document upload failed.")}`);
-  }
-  revalidatePath("/consultant/documents");
-  revalidatePath("/portal/documents");
-  redirect("/consultant/documents?success=Document+uploaded+for+the+selected+trucker.");
-}
-
 export async function reviewDocumentAction(formData: FormData) {
   const user = await requireUser();
   if (!["CONSULTANT_DISPATCHER", "SUPER_ADMIN"].includes(user.role)) redirect("/");

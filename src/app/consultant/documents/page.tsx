@@ -1,8 +1,7 @@
 import { requireRole } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { documentChecklist } from "@/lib/required-documents";
-import { REQUIRED_DOCUMENTS } from "@/lib/constants";
-import { dispatcherUploadDocumentAction, reviewDocumentAction } from "@/actions/documents";
+import { reviewDocumentAction } from "@/actions/documents";
 import { Flash } from "@/components/flash";
 import { StatusBadge } from "@/components/status-badge";
 import { Pagination } from "@/components/pagination";
@@ -25,7 +24,7 @@ export default async function ConsultantDocumentsPage({ searchParams }: { search
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return <>
-    <div className="page-header"><div><h1>Trucker Documents</h1><p>Upload required or unlimited optional documents on behalf of assigned truckers.</p></div></div>
+    <div className="page-header"><div><h1>Trucker Documents</h1><p>View and review documents uploaded by your assigned truckers. Dispatchers cannot upload files on behalf of truckers.</p></div></div>
     <Flash success={query.success} error={query.error} />
 
     <div className="card" style={{ marginBottom: 18 }}><div className="card-title"><div><h2>Required Compliance</h2><p>Three mandatory records per trucker.</p></div></div><div className="responsive-card-list compliance-list">
@@ -33,11 +32,9 @@ export default async function ConsultantDocumentsPage({ searchParams }: { search
       {!compliance.length ? <div className="empty">No assigned truckers.</div> : null}
     </div></div>
 
-    <div className="card" style={{ marginBottom: 18 }}><div className="card-title"><div><h2>Upload for Trucker</h2><p>Select required or optional document mode. Optional documents can be added multiple times.</p></div></div>
-      <form action={dispatcherUploadDocumentAction}>
-        <div className="form-grid"><div className="field"><label>Assigned trucker</label><select name="truckerId" required><option value="">Select trucker</option>{truckers.map((trucker) => <option value={trucker.id} key={trucker.id}>{trucker.user.name}{trucker.companyName ? ` — ${trucker.companyName}` : ""}</option>)}</select></div><div className="field"><label>Document mode</label><select name="documentMode" required><option value="REQUIRED">Required document</option><option value="OTHER">Other / optional document</option></select></div><div className="field"><label>Required document</label><select name="type"><option value="">Select when required</option>{REQUIRED_DOCUMENTS.map((type) => <option value={type} key={type}>{type}</option>)}</select></div><div className="field"><label>Other document title</label><input name="documentTitle" placeholder="e.g. W-9, NOA, Void Check" /></div><div className="field"><label>Reference number</label><input name="documentNumber" /></div><div className="field"><label>Issuing authority</label><input name="issuingAuthority" /></div><div className="field"><label>Issue date</label><input name="issueDate" type="date" /></div><div className="field"><label>Expiry date</label><input name="expiresAt" type="date" /></div></div>
-        <div className="field"><label>Notes</label><textarea name="notes" /></div><div className="field"><label>File</label><input name="file" type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp" required /><span className="hint">PDF, Word or image. Maximum 10MB.</span></div><button className="btn btn-primary">Upload for Trucker</button>
-      </form>
+    <div className="alert alert-info" style={{ marginBottom: 18 }}>
+      <strong>Document access is view and review only.</strong>{" "}
+      Truckers must upload their own required and optional documents from the Trucker Portal.
     </div>
 
     <div className="filter-bar"><form className="filter-form" method="get"><div className="field"><label>Filter by trucker</label><select name="trucker" defaultValue={query.trucker || ""}><option value="">All assigned truckers</option>{truckers.map((trucker) => <option value={trucker.id} key={trucker.id}>{trucker.user.name}</option>)}</select></div><button className="btn btn-secondary">Apply Filter</button></form></div>

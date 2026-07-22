@@ -35,6 +35,19 @@ export async function createInvoiceAction(formData: FormData) {
   });
   if (!trucker) redirect("/consultant/invoices?error=Assigned+trucker+not+found.");
 
+  const checklist = await documentChecklist(trucker.id);
+  const missingDocuments = checklist
+    .filter((item) => !item.complete)
+    .map((item) => item.type);
+
+  if (missingDocuments.length) {
+    redirect(
+      `/consultant/invoices?error=${encodeURIComponent(
+        `Invoice cannot be created until mandatory documents are complete: ${missingDocuments.join(", ")}`
+      )}`
+    );
+  }
+
   const existingInvoiceCount = await db.invoice.count({ where: { truckerId } });
   const isFirstInvoice = existingInvoiceCount === 0;
   const createdAt = new Date();
@@ -186,10 +199,36 @@ export async function payInvoiceAction(formData: FormData) {
     redirect(`/portal/invoices/${invoice.id}/pay?error=Acknowledge+the+agreement+before+payment.`);
   }
 
-  const processorFeeCents = Math.round(invoice.amountCents * 0.029) + 30;
-  const commissionBps = invoice.consultant.consultantProfile?.commissionRateBps ?? 500;
-  const dispatcherCommissionCents = Math.round(invoice.amountCents * commissionBps / 10000);
-  const companyNetCents = invoice.amountCents - processorFeeCents - dispatcherCommissionCents;
+  /*
+   * The trucker's selected commission rate represents the complete
+   * DispatchFlow commission for this invoice.
+   *
+   * Example:
+   * 5% total commission = 500 basis points
+   * Dispatcher receives 2.5%
+   * Company receives 2.5%
+   */
+  const processorFeeCents =
+    Math.round(invoice.amountCents * 0.029) + 30;
+
+  const totalCommissionBps =
+    invoice.trucker.selectedCommissionBps ?? 500;
+
+  const totalCommissionCents = Math.round(
+    (invoice.amountCents * totalCommissionBps) / 10000
+  );
+
+  const dispatcherCommissionCents = Math.floor(
+    totalCommissionCents / 2
+  );
+
+  const companyCommissionCents =
+    totalCommissionCents - dispatcherCommissionCents;
+
+  const companyNetCents = Math.max(
+    0,
+    companyCommissionCents - processorFeeCents
+  );
 
   await db.$transaction(async (tx) => {
     if (firstPayment && !invoice.agreement) {
