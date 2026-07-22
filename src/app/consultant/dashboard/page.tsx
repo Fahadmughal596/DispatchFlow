@@ -39,7 +39,7 @@ export default async function ConsultantDashboard({ searchParams }: { searchPara
 
   return (
     <>
-      {!profile?.profileCompletedAt ? <ConsultantProfilePopup name={user.name} email={user.email} phone={user.phone} specialty={profile?.specialty} workingHours={profile?.workingHours} timeZone={profile?.timeZone} bio={profile?.bio} commissionRate={(profile?.commissionRateBps || 500) / 100} /> : null}
+      {!profile?.profileCompletedAt ? <ConsultantProfilePopup name={user.name} email={user.email} phone={user.phone} specialty={profile?.specialty} workingHours={profile?.workingHours} timeZone={profile?.timeZone} bio={profile?.bio} /> : null}
       <Flash success={query.success} error={query.error} />
 
       <section className="dispatcher-hero">
@@ -50,7 +50,7 @@ export default async function ConsultantDashboard({ searchParams }: { searchPara
           <div className="dispatcher-hero-actions"><Link className="btn btn-primary" href="/consultant/truckers">View assigned truckers</Link><Link className="btn btn-secondary" href="/consultant/loads">Create a load</Link></div>
         </div>
         <div className="dispatcher-profile-summary">
-          <span>Commission rate</span><strong>{(profile?.commissionRateBps || 500) / 100}%</strong>
+          
           <small>{profile?.specialty || "Complete your specialty"}</small>
           <Link href="/consultant/profile">Edit profile →</Link>
         </div>

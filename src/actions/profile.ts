@@ -51,7 +51,6 @@ const consultantOnboardingSchema = z.object({
   workingHours: z.string().min(2).max(190),
   timeZone: z.string().min(2).max(100),
   bio: z.string().min(10).max(2000),
-  commissionRate: z.coerce.number().min(0).max(100)
 });
 
 export async function completeTruckerOnboardingAction(formData: FormData) {
@@ -128,7 +127,6 @@ export async function completeConsultantOnboardingAction(formData: FormData) {
         workingHours: parsed.data.workingHours,
         timeZone: parsed.data.timeZone,
         bio: parsed.data.bio,
-        commissionRateBps: Math.round(parsed.data.commissionRate * 100),
         profileCompletedAt: new Date()
       },
       create: {
@@ -138,7 +136,6 @@ export async function completeConsultantOnboardingAction(formData: FormData) {
         workingHours: parsed.data.workingHours,
         timeZone: parsed.data.timeZone,
         bio: parsed.data.bio,
-        commissionRateBps: Math.round(parsed.data.commissionRate * 100),
         profileCompletedAt: new Date()
       }
     })
@@ -153,7 +150,6 @@ export async function completeConsultantProfilePopupAction(formData: FormData) {
   const user = await requireUser();
   if (user.role !== "CONSULTANT_DISPATCHER") redirect("/");
 
-  const commissionRate = Number(formData.get("commissionRate") || 5);
   const name = String(formData.get("name") || user.name).trim();
   const phone = String(formData.get("phone") || "").trim();
   const specialty = String(formData.get("specialty") || "").trim();
@@ -171,12 +167,10 @@ export async function completeConsultantProfilePopupAction(formData: FormData) {
       where: { userId: user.id },
       update: {
         phone, specialty, workingHours, timeZone, bio,
-        commissionRateBps: Number.isFinite(commissionRate) ? Math.round(commissionRate * 100) : 500,
         profileCompletedAt: new Date()
       },
       create: {
         userId: user.id, phone, specialty, workingHours, timeZone, bio,
-        commissionRateBps: Number.isFinite(commissionRate) ? Math.round(commissionRate * 100) : 500,
         profileCompletedAt: new Date()
       }
     })
@@ -245,8 +239,6 @@ export async function updateConsultantProfileAction(formData: FormData) {
   const user = await requireUser();
   if (user.role !== "CONSULTANT_DISPATCHER") redirect("/");
 
-  const commissionRate = Number(formData.get("commissionRate") || 0);
-
   await db.$transaction([
     db.user.update({
       where: { id: user.id },
@@ -263,7 +255,6 @@ export async function updateConsultantProfileAction(formData: FormData) {
         specialty: String(formData.get("specialty") || "").trim() || null,
         workingHours: String(formData.get("workingHours") || "").trim() || null,
         timeZone: String(formData.get("timeZone") || "").trim() || null,
-        commissionRateBps: Number.isFinite(commissionRate) ? Math.round(commissionRate * 100) : 500,
         profileCompletedAt: new Date()
       },
       create: {
@@ -273,7 +264,6 @@ export async function updateConsultantProfileAction(formData: FormData) {
         specialty: String(formData.get("specialty") || "").trim() || null,
         workingHours: String(formData.get("workingHours") || "").trim() || null,
         timeZone: String(formData.get("timeZone") || "").trim() || null,
-        commissionRateBps: Number.isFinite(commissionRate) ? Math.round(commissionRate * 100) : 500,
         profileCompletedAt: new Date()
       }
     })

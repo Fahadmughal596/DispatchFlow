@@ -11,7 +11,6 @@ type Props = {
   workingHours?: string | null;
   timeZone?: string | null;
   bio?: string | null;
-  commissionRate: number;
 };
 
 export function ConsultantProfilePopup(props: Props) {
@@ -25,11 +24,11 @@ export function ConsultantProfilePopup(props: Props) {
         <div className="consultant-popup-intro">
           <span className="consultant-popup-kicker">Dispatcher setup</span>
           <h2 id="consultant-profile-title">Complete your professional profile</h2>
-          <p>This information is shown to your assigned truckers and is used for commission reporting.</p>
+          <p>This information is shown to your assigned truckers and helps them understand how you support their operation.</p>
           <div className="consultant-popup-benefits">
             <span>✓ Build trust with assigned truckers</span>
             <span>✓ Set availability and specialty</span>
-            <span>✓ Confirm dispatch commission</span>
+
           </div>
         </div>
         <form action={completeConsultantProfilePopupAction} className="consultant-popup-form">
@@ -40,7 +39,6 @@ export function ConsultantProfilePopup(props: Props) {
             <div className="field"><label>Specialty</label><input name="specialty" defaultValue={props.specialty || ""} placeholder="Dry van, reefer, flatbed..." required /></div>
             <div className="field"><label>Working hours</label><input name="workingHours" defaultValue={props.workingHours || ""} placeholder="Mon–Fri, 8 AM–6 PM" required /></div>
             <div className="field"><label>Time zone</label><input name="timeZone" defaultValue={props.timeZone || ""} placeholder="America/Chicago" required /></div>
-            <div className="field"><label>Dispatch commission (%)</label><input name="commissionRate" type="number" min="0" max="100" step="0.01" defaultValue={props.commissionRate} required /></div>
           </div>
           <div className="field"><label>Short professional bio</label><textarea name="bio" defaultValue={props.bio || ""} placeholder="Tell truckers how you help them book and manage profitable loads." required /></div>
           <div className="consultant-popup-actions">

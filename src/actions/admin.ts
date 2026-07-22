@@ -212,7 +212,6 @@ export async function updateDispatcherControlsAction(formData: FormData) {
         specialty: specialty || null,
         serviceDuration: serviceDuration || null,
         initialLoadCount: Number.isFinite(initialLoadCount) ? Math.max(0, Math.round(initialLoadCount)) : 0,
-        commissionRateBps: Math.max(0, Math.min(10000, Math.round(commissionRate * 100))),
         isPaused: status !== "ACTIVE"
       }
     })

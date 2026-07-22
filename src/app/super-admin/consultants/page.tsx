@@ -15,7 +15,7 @@ export default async function AdminConsultantsPage({ searchParams }: { searchPar
 
   return (
     <>
-      <div className="page-header"><div><h1>Consultants / Dispatchers</h1><p>Create accounts and control availability, capacity, priority and commission.</p></div></div>
+      <div className="page-header"><div><h1>Consultants / Dispatchers</h1><p>Create accounts and control availability, capacity, and round-robin priority.</p></div></div>
       <Flash success={query.success} error={query.error} />
       <div className="grid grid-2 admin-consultant-top">
         <div className="card">
@@ -65,7 +65,7 @@ export default async function AdminConsultantsPage({ searchParams }: { searchPar
               <div className="field"><label>Initial total loads</label><input name="initialLoadCount" type="number" min="0" defaultValue={consultant.consultantProfile?.initialLoadCount || 0} /></div>
               <div className="field"><label>Priority weight</label><input name="priorityWeight" type="number" min="1" defaultValue={consultant.consultantProfile?.priorityWeight || 1} /></div>
               <div className="field"><label>Maximum lead cap</label><input name="maxLeadCap" type="number" min="0" defaultValue={consultant.consultantProfile?.maxLeadCap || 100} /></div>
-              <div className="field"><label>Commission %</label><input name="commissionRate" type="number" min="0" max="100" step="0.01" defaultValue={(consultant.consultantProfile?.commissionRateBps || 500) / 100} /></div>
+              
               <button className="btn btn-primary">Save Controls</button>
             </form>
             <form action={toggleDispatcherPauseAction}>
