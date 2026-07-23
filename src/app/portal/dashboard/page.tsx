@@ -95,31 +95,6 @@ function MetricIcon({ kind }: { kind: "revenue" | "loads" | "average" }) {
   return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2v20M17 6.5c0-1.7-2.2-3-5-3s-5 1.3-5 3 2.2 3 5 3 5 1.3 5 3-2.2 3-5 3-5-1.3-5-3"/></svg>;
 }
 
-const LEAD_STATUS_LABELS: Record<string, string> = {
-  LEAD_SIGNED_UP: "Lead Signed Up",
-  LEAD_ASSIGNED: "Dispatcher Assigned",
-  CONTACT_MADE: "Contact Made",
-  CONTRACT_MADE: "Agreement Completed",
-  PENDING_INVOICE: "Invoice Pending",
-  INVOICE_SENT: "Invoice Sent",
-  INVOICE_PAID: "Invoice Paid"
-};
-
-const LEAD_STATUS_ORDER = [
-  "LEAD_SIGNED_UP",
-  "LEAD_ASSIGNED",
-  "CONTACT_MADE",
-  "CONTRACT_MADE",
-  "PENDING_INVOICE",
-  "INVOICE_SENT",
-  "INVOICE_PAID"
-] as const;
-
-function leadStatusLabel(status?: string | null) {
-  if (!status) return "Lead Created";
-  return LEAD_STATUS_LABELS[status] || status.replaceAll("_", " ");
-}
-
 function QuickIcon({ kind }: { kind: "chat" | "documents" | "invoices" }) {
   if (kind === "documents") {
     return <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7h7l2 2h9v10H3z"/><path d="M7 13h10M7 16h7"/></svg>;
@@ -156,7 +131,10 @@ export default async function TruckerDashboard({
     previousLoadRevenue,
     previousLoadCount,
     dueInvoiceCount,
-    dueInvoiceTotal
+    dueInvoiceTotal,
+    activeLoadCount,
+    scheduledLoadCount,
+    deliveredLoadCount
   ] = await Promise.all([
     db.truckerProfile.findUnique({
       where: { id: profile.id },
@@ -201,6 +179,26 @@ export default async function TruckerDashboard({
     db.invoice.aggregate({
       where: { truckerId: profile.id, status: { in: ["SENT", "VIEWED", "UNPAID", "OVERDUE"] } },
       _sum: { amountCents: true }
+    }),
+    db.load.count({
+      where: {
+        truckerId: profile.id,
+        status: { in: ["PICKED_UP", "IN_TRANSIT"] }
+      }
+    }),
+    db.load.count({
+      where: {
+        truckerId: profile.id,
+        status: {
+          in: ["DRAFT", "OFFERED", "ASSIGNED", "BOOKED", "DOCS_PENDING"]
+        }
+      }
+    }),
+    db.load.count({
+      where: {
+        truckerId: profile.id,
+        status: { in: ["DELIVERED", "DROPPED_OFF", "COMPLETED"] }
+      }
     })
   ]);
 
@@ -229,18 +227,11 @@ export default async function TruckerDashboard({
         : "Active";
   const dispatcherTotalLoads = (dispatcherProfile?.initialLoadCount || 0) + (dispatcher?._count.createdLoads || 0);
   const dispatcherPastRevenueCents = 0;
-
-  const lead = full.lead;
-  const currentLeadStatus = lead?.currentStatus || "LEAD_SIGNED_UP";
-  const currentLeadIndex = LEAD_STATUS_ORDER.indexOf(
-    currentLeadStatus as (typeof LEAD_STATUS_ORDER)[number]
-  );
-
-  const journey = [
+const journey = [
     { label: "Signup", state: "Complete", complete: true, current: false, href: "/portal/profile" },
     { label: "Contact", state: contactComplete ? "Complete" : "Pending", complete: contactComplete, current: !contactComplete, href: "/portal/chat" },
     { label: "Documents", state: documentsComplete ? "Complete" : "In Progress", complete: documentsComplete, current: contactComplete && !documentsComplete, href: "/portal/documents" },
-    { label: "Active", state: activeComplete ? "Complete" : "Upcoming", complete: activeComplete, current: documentsComplete && !activeComplete, href: "/portal/payments?view=due" }
+    { label: "Active", state: activeComplete ? "Complete" : "Upcoming", complete: activeComplete, current: documentsComplete && !activeComplete, href: "/portal/invoices?view=due" }
   ];
 
   return (
@@ -549,6 +540,120 @@ export default async function TruckerDashboard({
         @media (max-width:430px) {
           .dispatcher-profile-grid { grid-template-columns:1fr; }
         }
+
+        .trucker-load-status-grid {
+          display:grid;
+          grid-template-columns:repeat(3,minmax(0,1fr));
+          gap:16px;
+          margin:18px 0 24px;
+        }
+
+        .trucker-load-status-card {
+          min-height:126px;
+          display:grid;
+          grid-template-columns:54px minmax(0,1fr) auto;
+          gap:15px;
+          align-items:center;
+          padding:20px;
+          border:1px solid rgba(103,148,214,.18);
+          border-radius:17px;
+          background:linear-gradient(145deg,rgba(8,25,53,.98),rgba(3,15,34,.97));
+          box-shadow:0 16px 40px rgba(0,0,0,.17);
+        }
+
+        .load-status-icon {
+          width:54px;
+          height:54px;
+          display:grid;
+          place-items:center;
+          border-radius:15px;
+        }
+
+        .load-status-icon svg {
+          width:28px;
+          height:28px;
+          fill:none;
+          stroke:currentColor;
+          stroke-width:1.8;
+          stroke-linecap:round;
+          stroke-linejoin:round;
+        }
+
+        .trucker-load-status-card.active .load-status-icon {
+          color:#e5fff1;
+          background:linear-gradient(145deg,#168b55,#0b5633);
+        }
+
+        .trucker-load-status-card.scheduled .load-status-icon {
+          color:#edf6ff;
+          background:linear-gradient(145deg,#147df0,#084a9d);
+        }
+
+        .trucker-load-status-card.delivered .load-status-icon {
+          color:#fff4e9;
+          background:linear-gradient(145deg,#ff9949,#c95a13);
+        }
+
+        .load-status-copy span,
+        .load-status-copy strong,
+        .load-status-copy small {
+          display:block;
+        }
+
+        .load-status-copy > span {
+          color:#8fa1b8;
+          font-size:.67rem;
+          font-weight:800;
+          text-transform:uppercase;
+          letter-spacing:.07em;
+        }
+
+        .load-status-copy strong {
+          margin-top:5px;
+          color:#f4f8ff;
+          font-size:1rem;
+        }
+
+        .load-status-copy small {
+          margin-top:5px;
+          color:#7f90a8;
+          font-size:.7rem;
+          line-height:1.4;
+        }
+
+        .load-status-count {
+          color:#fff;
+          font-size:2rem;
+          font-weight:850;
+        }
+
+        @media (max-width:900px) {
+          .trucker-load-status-grid {
+            grid-template-columns:1fr;
+          }
+
+          .trucker-load-status-card {
+            min-height:106px;
+          }
+        }
+
+        @media (max-width:430px) {
+          .trucker-load-status-card {
+            grid-template-columns:46px minmax(0,1fr) auto;
+            gap:11px;
+            padding:15px;
+          }
+
+          .load-status-icon {
+            width:46px;
+            height:46px;
+          }
+
+          .load-status-count {
+            font-size:1.65rem;
+          }
+        }
+
       `}</style>
 
       <Flash success={query.success} />
@@ -559,70 +664,83 @@ export default async function TruckerDashboard({
           <h1>Welcome, {(user.username || user.name).split(" ")[0]} <span aria-hidden="true">👋</span></h1>
           <p>Track your dispatcher, business performance, onboarding progress, and daily portal activity from one place.</p>
           <span className={`account-status-pill ${activeComplete ? "active" : "onboarding"}`}>
-            {activeComplete ? "Active client" : "Account setup in progress"}
+            {activeComplete ? "Active" : "Account setup in progress"}
           </span>
         </div>
 
       </section>
 
-      <div className="dashboard-section-intro">
-        <div>
-          <span className="dashboard-section-kicker">Lead journey</span>
-          <h2>Your Lead Status</h2>
-          <p>Track your signup, dispatcher assignment, contact, agreement, invoice, and activation progress.</p>
-        </div>
-      </div>
+      <section
+        className="trucker-load-status-grid"
+        aria-label="Load status overview"
+      >
+        <Link
+          className="trucker-load-status-card active"
+          href="/portal/loads?status=active"
+        >
+          <span className="load-status-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M3 7h11v9H3z" />
+              <path d="M14 10h4l3 3v3h-7z" />
+              <circle cx="7" cy="18" r="2" />
+              <circle cx="18" cy="18" r="2" />
+            </svg>
+          </span>
 
-      <section className="trucker-lead-card" aria-label="Lead status">
-        <div className="trucker-lead-header">
-          <div>
-            <span>Current stage</span>
-            <h2>{leadStatusLabel(currentLeadStatus)}</h2>
-          </div>
+          <span className="load-status-copy">
+            <span>Current loads</span>
+            <strong>Active Loads</strong>
+            <small>Picked up or currently in transit.</small>
+          </span>
 
-          <strong className="trucker-lead-status-badge">
-            {leadStatusLabel(currentLeadStatus)}
+          <strong className="load-status-count">
+            {activeLoadCount}
           </strong>
-        </div>
+        </Link>
 
-        <div className="trucker-lead-meta">
-          <div>
-            <span>Lead ID</span>
-            <strong>{lead ? `#${lead.id}` : "Not available"}</strong>
-          </div>
+        <Link
+          className="trucker-load-status-card scheduled"
+          href="/portal/loads?status=scheduled"
+        >
+          <span className="load-status-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <rect x="3" y="5" width="18" height="16" rx="2" />
+              <path d="M16 3v4M8 3v4M3 10h18" />
+            </svg>
+          </span>
 
-          <div>
-            <span>Created</span>
-            <strong>{lead ? dateTime(lead.createdAt) : "Not available"}</strong>
-          </div>
+          <span className="load-status-copy">
+            <span>Upcoming and pending</span>
+            <strong>Scheduled Loads</strong>
+            <small>Booked, assigned, offered or awaiting action.</small>
+          </span>
 
-          <div>
-            <span>Source</span>
-            <strong>{lead?.source?.replaceAll("_", " ") || "Portal signup"}</strong>
-          </div>
+          <strong className="load-status-count">
+            {scheduledLoadCount}
+          </strong>
+        </Link>
 
-          <div>
-            <span>Assigned Dispatcher</span>
-            <strong>{dispatcher?.name || "Waiting for assignment"}</strong>
-          </div>
-        </div>
+        <Link
+          className="trucker-load-status-card delivered"
+          href="/portal/loads?status=delivered"
+        >
+          <span className="load-status-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M4 12 9 17 20 6" />
+              <circle cx="12" cy="12" r="9" />
+            </svg>
+          </span>
 
-        <div className="trucker-lead-timeline">
-          {LEAD_STATUS_ORDER.map((status, index) => {
-            const complete = currentLeadIndex >= index;
-            const current = currentLeadIndex === index;
+          <span className="load-status-copy">
+            <span>Completed work</span>
+            <strong>Delivered Loads</strong>
+            <small>Delivered, dropped off or fully completed.</small>
+          </span>
 
-            return (
-              <div
-                className={`trucker-lead-step ${complete ? "complete" : ""} ${current ? "current" : ""}`}
-                key={status}
-              >
-                <i>{complete ? "✓" : index + 1}</i>
-                <span>{leadStatusLabel(status)}</span>
-              </div>
-            );
-          })}
-        </div>
+          <strong className="load-status-count">
+            {deliveredLoadCount}
+          </strong>
+        </Link>
       </section>
 
       <div className="dashboard-section-intro">
