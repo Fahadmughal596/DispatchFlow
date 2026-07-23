@@ -18,7 +18,7 @@ type EditableDocument = {
 
 type OtherDocumentModalProps = {
   document?: EditableDocument;
-  triggerStyle?: "card" | "button";
+  triggerStyle?: "card" | "button" | "header";
 };
 
 export function OtherDocumentModal({
@@ -64,6 +64,15 @@ export function OtherDocumentModal({
           </span>
 
           <span className="add-other-document-arrow">→</span>
+        </button>
+      ) : triggerStyle === "header" ? (
+        <button
+          type="button"
+          className="btn btn-primary add-other-document-header-btn"
+          onClick={() => setOpen(true)}
+        >
+          <span aria-hidden="true">+</span>
+          Add Other Document
         </button>
       ) : (
         <button

@@ -661,7 +661,7 @@ const journey = [
       <section className="trucker-dashboard-hero">
         <div className="trucker-hero-copy">
           <span className="trucker-hero-kicker">Trucker Portal</span>
-          <h1>Welcome, {(user.username || user.name).split(" ")[0]} <span aria-hidden="true">ðŸ‘‹</span></h1>
+          <h1>Welcome, {(user.username || user.name).split(" ")[0]} <span aria-hidden="true">&#128075;</span></h1>
           <p>Track your dispatcher, business performance, onboarding progress, and daily portal activity from one place.</p>
           <span className={`account-status-pill ${activeComplete ? "active" : "onboarding"}`}>
             {activeComplete ? "Active" : "Account setup in progress"}
@@ -969,3 +969,4 @@ const journey = [
     </>
   );
 }
+

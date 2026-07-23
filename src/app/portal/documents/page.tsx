@@ -75,10 +75,14 @@ export default async function TruckerDocumentsPage({
           </p>
         </div>
 
-        <span className="badge badge-orange">
-          {checklist.filter((item) => !item.complete).length}
-          {" "}Mandatory Missing
-        </span>
+        <div className="actions documents-header-actions">
+          <span className="badge badge-orange">
+            {checklist.filter((item) => !item.complete).length}
+            {" "}Mandatory Missing
+          </span>
+
+          <OtherDocumentModal triggerStyle="header" />
+        </div>
       </div>
 
       <Flash success={params.success} error={params.error} />
@@ -247,10 +251,7 @@ export default async function TruckerDocumentsPage({
             <p>Add, view and edit supporting documents.</p>
           </div>
         </div>
-
-        <OtherDocumentModal triggerStyle="card" />
-
-        <div className="card all-other-documents-card">
+<div className="card all-other-documents-card">
           <div className="card-title">
             <div>
               <h3>All Other Documents</h3>
