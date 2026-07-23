@@ -93,7 +93,6 @@ model User {
   id              Int        @id @default(autoincrement())
   role            Role
   name            String
-  username        String?    @unique
   email           String     @unique
   phone           String?
   passwordHash    String?

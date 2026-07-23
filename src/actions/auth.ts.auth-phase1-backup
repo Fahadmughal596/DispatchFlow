@@ -15,29 +15,15 @@ import { ensureRequiredDocumentRequests } from "@/lib/required-documents";
 import { audit } from "@/lib/audit";
 
 const loginSchema = z.object({
-  identifier: z.string().trim().min(1),
+  email: z.string().email(),
   password: z.string().min(1)
 });
 
 const signupSchema = z.object({
-  username: z
-    .string()
-    .trim()
-    .min(3, "Username must contain at least 3 characters.")
-    .max(24, "Username cannot exceed 24 characters.")
-    .regex(
-      /^[a-zA-Z0-9._-]+$/,
-      "Username may only contain letters, numbers, dots, dashes and underscores."
-    ),
   email: z.string().email(),
   password: z.string().min(8).max(100),
   passwordConfirmation: z.string().min(8).max(100),
-  termsAccepted: z.literal("on", {
-    message: "You must accept the Terms & Conditions."
-  }),
-  privacyAccepted: z.literal("on", {
-    message: "You must accept the Privacy Policy."
-  })
+  consent: z.literal("on")
 }).refine((data) => data.password === data.passwordConfirmation, {
   message: "Passwords do not match.",
   path: ["passwordConfirmation"]
@@ -57,15 +43,8 @@ export async function loginAction(formData: FormData) {
   const parsed = loginSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) redirect("/login?error=Enter+a+valid+email+and+password.");
 
-  const identifier = parsed.data.identifier.toLowerCase();
-
-  const user = await db.user.findFirst({
-    where: {
-      OR: [
-        { email: identifier },
-        { username: identifier }
-      ]
-    },
+  const user = await db.user.findUnique({
+    where: { email: parsed.data.email.toLowerCase() },
     include: { truckerProfile: true, consultantProfile: true }
   });
 
@@ -75,7 +54,7 @@ export async function loginAction(formData: FormData) {
     !user.passwordHash ||
     !(await bcrypt.compare(parsed.data.password, user.passwordHash))
   ) {
-    redirect("/login?error=Incorrect+username,+email+or+password.");
+    redirect("/login?error=Incorrect+email+or+password.");
   }
 
   await db.user.update({
@@ -95,23 +74,8 @@ export async function signupAction(formData: FormData) {
   }
 
   const email = parsed.data.email.toLowerCase();
-  const username = parsed.data.username.toLowerCase();
-
-  const existingEmail = await db.user.findUnique({
-    where: { email }
-  });
-
-  if (existingEmail) {
-    redirect("/signup?error=An+account+with+this+email+already+exists.");
-  }
-
-  const existingUsername = await db.user.findUnique({
-    where: { username }
-  });
-
-  if (existingUsername) {
-    redirect("/signup?error=This+username+is+already+taken.");
-  }
+  const exists = await db.user.findUnique({ where: { email } });
+  if (exists) redirect("/signup?error=An+account+with+this+email+already+exists.");
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
 
@@ -119,8 +83,7 @@ export async function signupAction(formData: FormData) {
     const user = await tx.user.create({
       data: {
         role: "TRUCKER",
-        name: parsed.data.username.trim(),
-        username,
+        name: provisionalName(email),
         email,
         passwordHash,
         authProvider: "EMAIL"

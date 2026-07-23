@@ -193,10 +193,10 @@ export async function PortalShell({
 
         <div className="sidebar-bottom">
           <div className="user-mini">
-            <div className="avatar">{(user.username || user.name).slice(0, 1).toUpperCase()}</div>
+            <div className="avatar">{user.name.slice(0, 1).toUpperCase()}</div>
             <div>
-              <strong>{user.username || user.name}</strong>
-              <span>{ROLE_LABEL[user.role]}</span>
+              <strong>{user.name}</strong>
+              <span>{user.email}</span>
             </div>
           </div>
           <form action={logoutAction}>
@@ -281,12 +281,12 @@ export async function PortalShell({
             {isTrucker || isConsultant ? (
               <details className="user-menu-details">
                 <summary className="top-user-summary">
-                  <span className="top-user-avatar">{(user.username || user.name).slice(0, 1).toUpperCase()}</span>
+                  <span className="top-user-avatar">{user.name.slice(0, 1).toUpperCase()}</span>
                   <span className="top-user-chevron">⌄</span>
                 </summary>
                 <div className="card top-user-menu">
-                  <strong>{user.username || user.name}</strong>
-                  <span>{ROLE_LABEL[user.role]}</span>
+                  <strong>{user.name}</strong>
+                  <span>{user.email}</span>
                   <Link href={isTrucker ? "/portal/profile" : "/consultant/profile"}>Account settings</Link>
                   <form action={logoutAction}>
                     <button type="submit">Sign out</button>

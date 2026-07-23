@@ -2,6 +2,7 @@ import Link from "next/link";
 import { loginAction } from "@/actions/auth";
 import { redirectAuthenticated } from "@/lib/auth";
 import { Flash } from "@/components/flash";
+import { PasswordField } from "@/components/password-field";
 
 export default async function LoginPage({
   searchParams
@@ -13,29 +14,55 @@ export default async function LoginPage({
 
   return (
     <>
-      <h1>Log in</h1>
-      <p>Use your email account or continue with Google.</p>
+      <div className="auth-heading">
+        <span className="auth-kicker">Secure trucker access</span>
+        <h1>Log in</h1>
+        <p>Use your username, email account, or continue with Google.</p>
+      </div>
+
       <Flash error={params.error} />
 
-      <a className="btn btn-google" href="/api/auth/google/start" style={{ width: "100%" }}>
+      <a
+        className="btn btn-google"
+        href="/api/auth/google/start"
+        style={{ width: "100%" }}
+      >
         Continue with Google
       </a>
 
-      <div className="auth-divider"><span>or use email and password</span></div>
+      <div className="auth-divider">
+        <span>or use username / email and password</span>
+      </div>
 
-      <form action={loginAction}>
+      <form action={loginAction} className="auth-form">
         <div className="field">
-          <label>Email address</label>
-          <input name="email" type="email" required autoComplete="email" />
+          <label htmlFor="identifier">Username or email</label>
+          <input
+            id="identifier"
+            name="identifier"
+            type="text"
+            required
+            autoComplete="username"
+            placeholder="Enter username or email"
+          />
         </div>
-        <div className="field">
-          <label>Password</label>
-          <input name="password" type="password" required autoComplete="current-password" />
-        </div>
-        <button className="btn btn-primary" style={{ width: "100%" }}>Log in</button>
+
+        <PasswordField
+          name="password"
+          label="Password"
+          autoComplete="current-password"
+        />
+
+        <button className="btn btn-primary auth-submit-button">
+          Log in
+        </button>
       </form>
-      <p className="text-small text-muted" style={{ marginTop: 18 }}>
-        New trucker? <Link className="link" href="/signup">Create your account</Link>
+
+      <p className="text-small text-muted auth-switch-text">
+        New trucker?{" "}
+        <Link className="link" href="/signup">
+          Create your account
+        </Link>
       </p>
     </>
   );
