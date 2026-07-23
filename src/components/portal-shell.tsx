@@ -10,13 +10,17 @@ import { db } from "@/lib/db";
 import { missingDocumentSummary } from "@/lib/required-documents";
 import { money } from "@/lib/utils";
 
-function roleItems(role: Role, missingCount: number): NavItem[] {
+function roleItems(
+  role: Role,
+  missingCount: number,
+  invoiceCount: number
+): NavItem[] {
   if (role === "TRUCKER") {
     return [
       { href: "/portal/dashboard", label: "Dashboard", icon: "home" },
       { href: "/portal/chat", label: "Chat", icon: "chat" },
       { href: "/portal/documents", label: "Documents", icon: "folder", badge: missingCount },
-      { href: "/portal/invoices", label: "Invoices", icon: "invoice" },
+      { href: "/portal/invoices", label: "Invoices", icon: "invoice", badge: invoiceCount },
       { href: "/portal/loads", label: "Loads", icon: "truck" },
       { href: "/portal/profile", label: "Settings", icon: "settings" }
     ];
@@ -29,7 +33,7 @@ function roleItems(role: Role, missingCount: number): NavItem[] {
       { href: "/consultant/truckers", label: "Assigned Truckers", icon: "users" },
       { href: "/consultant/chat", label: "Chat", icon: "chat" },
       { href: "/consultant/documents", label: "Documents", icon: "folder", badge: missingCount },
-      { href: "/consultant/invoices", label: "Invoices", icon: "invoice" },
+      { href: "/consultant/invoices", label: "Invoices", icon: "invoice", badge: invoiceCount },
       { href: "/consultant/payments", label: "Payments", icon: "card" },
       { href: "/consultant/loads", label: "Loads", icon: "truck" },
       { href: "/consultant/profile", label: "Profile", icon: "settings" }
@@ -43,7 +47,7 @@ function roleItems(role: Role, missingCount: number): NavItem[] {
     { href: "/super-admin/leads", label: "Leads & Assignment", icon: "LE" },
     { href: "/super-admin/chats", label: "Chat Audit", icon: "CH" },
     { href: "/super-admin/documents", label: "Documents", icon: "DO", badge: missingCount },
-    { href: "/super-admin/invoices", label: "Invoices", icon: "IN" },
+    { href: "/super-admin/invoices", label: "Invoices", icon: "IN", badge: invoiceCount },
     { href: "/super-admin/loads", label: "Loads", icon: "LO" },
     { href: "/super-admin/payments", label: "Payments", icon: "PA" },
     { href: "/super-admin/reports", label: "Reports", icon: "RE" },
@@ -121,14 +125,34 @@ export async function PortalShell({
     (total, invoice) => total + invoice.amountCents,
     0
   );
+
+  const invoiceActionCount =
+    user.role === "TRUCKER"
+      ? unpaidInvoiceCount
+      : user.role === "CONSULTANT_DISPATCHER"
+        ? await db.invoice.count({
+            where: {
+              consultantId: user.id,
+              status: {
+                in: ["SENT", "VIEWED", "UNPAID", "OVERDUE"]
+              }
+            }
+          })
+        : await db.invoice.count({
+            where: {
+              status: {
+                in: ["SENT", "VIEWED", "UNPAID", "OVERDUE"]
+              }
+            }
+          });
   const t2f = await db.appSetting.findUnique({ where: { key: "t2f_url" } });
   const t2fUrl = t2f?.value || process.env.T2F_URL || "https://truck2fleet.com/public/";
   const isTrucker = user.role === "TRUCKER";
   const isConsultant = user.role === "CONSULTANT_DISPATCHER";
   const items = isTrucker
-    ? roleItems(user.role, summary.missingCount)
+    ? roleItems(user.role, summary.missingCount, invoiceActionCount)
     : [
-        ...roleItems(user.role, summary.missingCount),
+        ...roleItems(user.role, summary.missingCount, invoiceActionCount),
         { href: t2fUrl, label: "Open / Connect T2F", icon: "T2", external: true }
       ];
 

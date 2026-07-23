@@ -31,7 +31,12 @@ export default async function AdminLoadsPage({
       include: {
         trucker: { include: { user: true } },
         consultant: true,
-        documents: true
+        documents: true,
+        invoice: {
+          include: {
+            payment: true
+          }
+        }
       },
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * PAGE_SIZE,
@@ -41,7 +46,7 @@ export default async function AdminLoadsPage({
 
   return (
     <>
-      <div className="page-header"><div><h1>Loads</h1><p>Global load oversight with status, date filters and pagination.</p></div></div>
+      <div className="page-header"><div><h1>Loads</h1><p>Monitor loads, linked invoices and payment statuses across the platform.</p></div></div>
       <div className="card">
         <form className="toolbar" method="GET">
           <div className="field-inline"><label>From</label><input name="from" type="date" defaultValue={query.from} /></div>
@@ -53,16 +58,81 @@ export default async function AdminLoadsPage({
 
         <div className="table-wrap">
           <table className="table">
-            <thead><tr><th>Load</th><th>Trucker</th><th>Consultant</th><th>Route</th><th>Rate</th><th>Status</th><th>Pickup</th><th>Update</th></tr></thead>
+            <thead><tr><th>Load</th><th>Trucker</th><th>Consultant</th><th>Route</th><th>Rate</th><th>Status</th><th>Invoice</th><th>Payment</th><th>Pickup</th><th>Update</th></tr></thead>
             <tbody>
               {loads.map((load) => (
                 <tr key={load.id}>
                   <td><strong>{load.loadRef}</strong><div className="text-small text-muted">{load.documents.length} documents</div></td>
                   <td>{load.trucker.user.name}</td>
                   <td>{load.consultant.name}</td>
-                  <td>{load.pickupLocation} → {load.deliveryLocation}</td>
+                  <td>{load.pickupLocation} {"\u2192"} {load.deliveryLocation}</td>
                   <td>{money(load.rateCents)}</td>
-                  <td><StatusBadge value={load.status} /></td>
+                  <td>
+                    <StatusBadge value={load.status} />
+                  </td>
+
+                  <td>
+                    {load.invoice ? (
+                      <div>
+                        <strong>{load.invoice.invoiceNumber}</strong>
+
+                        <div
+                          className="text-small text-muted"
+                          style={{ marginTop: 4 }}
+                        >
+                          <StatusBadge value={load.invoice.status} />
+                        </div>
+
+                        <a
+                          className="btn btn-secondary btn-sm"
+                          style={{ marginTop: 7 }}
+                          href={`/print/invoice/${load.invoice.id}`}
+                        >
+                          View Invoice
+                        </a>
+                      </div>
+                    ) : (
+                      <span className="text-small text-muted">
+                        No linked invoice
+                      </span>
+                    )}
+                  </td>
+
+                  <td>
+                    {load.invoice?.payment ? (
+                      <div>
+                        <StatusBadge
+                          value={load.invoice.payment.status}
+                        />
+
+                        <div
+                          className="text-small text-muted"
+                          style={{ marginTop: 5 }}
+                        >
+                          {money(load.invoice.payment.amountCents)}
+                        </div>
+
+                        {load.invoice.payment.receiptNumber ? (
+                          <a
+                            className="btn btn-secondary btn-sm"
+                            style={{ marginTop: 7 }}
+                            href={`/print/receipt/${load.invoice.payment.id}`}
+                          >
+                            View Receipt
+                          </a>
+                        ) : null}
+                      </div>
+                    ) : load.invoice ? (
+                      <span className="badge badge-red">
+                        Unpaid
+                      </span>
+                    ) : (
+                      <span className="text-small text-muted">
+                        Not available
+                      </span>
+                    )}
+                  </td>
+
                   <td>{dateTime(load.pickupAt)}</td>
                   <td>
                     <form className="actions" action={updateLoadStatusAction}>
@@ -73,7 +143,7 @@ export default async function AdminLoadsPage({
                   </td>
                 </tr>
               ))}
-              {!loads.length ? <tr><td colSpan={8}><div className="empty">No loads found.</div></td></tr> : null}
+              {!loads.length ? <tr><td colSpan={10}><div className="empty">No loads found.</div></td></tr> : null}
             </tbody>
           </table>
         </div>
