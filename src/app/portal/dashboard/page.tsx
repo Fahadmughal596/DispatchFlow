@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 import { requireRole } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { documentChecklist } from "@/lib/required-documents";
@@ -77,7 +77,7 @@ function Trend({ value }: { value: number }) {
   const positive = value >= 0;
   return (
     <span className={`metric-trend ${positive ? "positive" : "negative"}`}>
-      <span aria-hidden="true">{positive ? "↑" : "↓"}</span>
+      <span aria-hidden="true">{positive ? "â†‘" : "â†“"}</span>
       {Math.abs(value).toFixed(1)}% <small>vs previous period</small>
     </span>
   );
@@ -661,7 +661,7 @@ const journey = [
       <section className="trucker-dashboard-hero">
         <div className="trucker-hero-copy">
           <span className="trucker-hero-kicker">Trucker Portal</span>
-          <h1>Welcome, {(user.username || user.name).split(" ")[0]} <span aria-hidden="true">👋</span></h1>
+          <h1>Welcome, {(user.username || user.name).split(" ")[0]} <span aria-hidden="true">ðŸ‘‹</span></h1>
           <p>Track your dispatcher, business performance, onboarding progress, and daily portal activity from one place.</p>
           <span className={`account-status-pill ${activeComplete ? "active" : "onboarding"}`}>
             {activeComplete ? "Active" : "Account setup in progress"}
@@ -676,7 +676,7 @@ const journey = [
       >
         <Link
           className="trucker-load-status-card active"
-          href="/portal/loads?status=active"
+          href="/portal/loads?tab=active"
         >
           <span className="load-status-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
@@ -700,7 +700,7 @@ const journey = [
 
         <Link
           className="trucker-load-status-card scheduled"
-          href="/portal/loads?status=scheduled"
+          href="/portal/loads?tab=scheduled"
         >
           <span className="load-status-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
@@ -722,7 +722,7 @@ const journey = [
 
         <Link
           className="trucker-load-status-card delivered"
-          href="/portal/loads?status=delivered"
+          href="/portal/loads?tab=completed"
         >
           <span className="load-status-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24">
@@ -833,8 +833,8 @@ const journey = [
           <details className="dashboard-date-filter dashboard-date-filter-fix">
             <summary>
               <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
-              <span>{shortDate(selectedRange.start)} – {shortDate(selectedRange.end)}</span>
-              <span aria-hidden="true">⌄</span>
+              <span>{shortDate(selectedRange.start)} â€“ {shortDate(selectedRange.end)}</span>
+              <span aria-hidden="true">âŒ„</span>
             </summary>
             <form className="dashboard-date-popover" method="get">
               <label>From<input type="date" name="from" defaultValue={query.from} /></label>
@@ -890,7 +890,7 @@ const journey = [
           <div className="journey-segment" key={step.label}>
             <Link className={`journey-step ${step.complete ? "complete" : ""} ${step.current ? "current" : ""}`} href={step.href}>
               <span className="journey-icon" aria-hidden="true">
-                {step.complete ? "✓" : index === 1 ? "●" : index === 2 ? "▤" : "⚑"}
+                {step.complete ? "âœ“" : index === 1 ? "â—" : index === 2 ? "â–¤" : "âš‘"}
               </span>
               <span>
                 <strong>{step.label}</strong>
@@ -914,17 +914,17 @@ const journey = [
         <Link className="dashboard-quick-card chat" href="/portal/chat">
           <span className="quick-icon"><QuickIcon kind="chat" /></span>
           <span><strong>Chat</strong><small>Discuss current or upcoming loads with your dispatcher.</small></span>
-          <b aria-hidden="true">›</b>
+          <b aria-hidden="true">â€º</b>
         </Link>
         <Link className="dashboard-quick-card documents" href="/portal/documents">
           <span className="quick-icon"><QuickIcon kind="documents" /></span>
           <span><strong>Documents</strong><small>{missingDocuments ? `${missingDocuments} required file${missingDocuments === 1 ? "" : "s"} missing. Upload them to continue onboarding.` : "All required documents are complete."}</small></span>
-          <b aria-hidden="true">›</b>
+          <b aria-hidden="true">â€º</b>
         </Link>
         <Link className="dashboard-quick-card invoices" href="/portal/invoices">
           <span className="quick-icon"><QuickIcon kind="invoices" /></span>
-          <span><strong>Invoices</strong><small>{dueInvoiceCount ? `${dueInvoiceCount} due · ${money(dueInvoiceTotal._sum.amountCents || 0)}. Review your billing status.` : "No due invoices. Your billing is up to date."}</small></span>
-          <b aria-hidden="true">›</b>
+          <span><strong>Invoices</strong><small>{dueInvoiceCount ? `${dueInvoiceCount} due Â· ${money(dueInvoiceTotal._sum.amountCents || 0)}. Review your billing status.` : "No due invoices. Your billing is up to date."}</small></span>
+          <b aria-hidden="true">â€º</b>
         </Link>
       </section>
 
