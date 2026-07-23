@@ -17,7 +17,6 @@ function roleItems(role: Role, missingCount: number): NavItem[] {
       { href: "/portal/chat", label: "Chat", icon: "chat" },
       { href: "/portal/documents", label: "Documents", icon: "folder", badge: missingCount },
       { href: "/portal/invoices", label: "Invoices", icon: "invoice" },
-      { href: "/portal/payments", label: "Payments", icon: "card" },
       { href: "/portal/loads", label: "Loads", icon: "truck" },
       { href: "/portal/profile", label: "Settings", icon: "settings" }
     ];
