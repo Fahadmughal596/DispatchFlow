@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
@@ -8,6 +8,7 @@ import { db } from "@/lib/db";
 import { audit } from "@/lib/audit";
 import { saveDocumentFile } from "@/lib/files";
 import { normalizeLoadStatus } from "@/lib/portal-filters";
+import { invoiceNumber } from "@/lib/utils";
 
 export async function createLoadAction(formData: FormData) {
   const user = await requireUser();
@@ -32,41 +33,140 @@ export async function createLoadAction(formData: FormData) {
       id: truckerId,
       assignedConsultantId: user.id,
       accountStatus: "ACTIVE"
+    },
+    include: {
+      user: true
     }
   });
   if (!trucker) {
     redirect("/consultant/loads?error=Loads+can+only+be+created+for+assigned+active+truckers.");
   }
 
-  const load = await db.load.create({
-    data: {
-      truckerId,
-      consultantId: user.id,
-      loadRef: `LOAD-${randomUUID().slice(0, 8).toUpperCase()}`,
-      pickupLocation,
-      deliveryLocation,
-      pickupAt: pickupAt ? new Date(pickupAt) : null,
-      deliveryAt: deliveryAt ? new Date(deliveryAt) : null,
-      rateCents: Math.round(rate * 100),
-      broker: broker || null,
-      status,
-      notes: notes || null
-    }
+  const selectedCommissionBps =
+    trucker.selectedCommissionBps;
+
+  if (
+    typeof selectedCommissionBps !== "number" ||
+    selectedCommissionBps <= 0
+  ) {
+    redirect(
+      "/consultant/loads?error=Trucker+commission+rate+is+not+configured."
+    );
+  }
+
+  const commissionBps = selectedCommissionBps;
+  const rateCents = Math.round(rate * 100);
+
+  const invoiceAmountCents = Math.round(
+    (rateCents * commissionBps) / 10000
+  );
+
+  const existingInvoiceCount = await db.invoice.count({
+    where: { truckerId }
   });
 
-  await db.notification.create({
-    data: {
-      userId: trucker.userId,
-      title: "New load entry",
-      message: `${load.loadRef} was added to your portal.`,
-      url: "/portal/loads"
-    }
+  const result = await db.$transaction(async (tx) => {
+    const createdLoad = await tx.load.create({
+      data: {
+        truckerId,
+        consultantId: user.id,
+        loadRef: `LOAD-${randomUUID()
+          .slice(0, 8)
+          .toUpperCase()}`,
+        pickupLocation,
+        deliveryLocation,
+        pickupAt: pickupAt ? new Date(pickupAt) : null,
+        deliveryAt: deliveryAt
+          ? new Date(deliveryAt)
+          : null,
+        rateCents,
+        broker: broker || null,
+        status,
+        notes: notes || null
+      }
+    });
+
+    const description =
+      `Dispatch commission for ${createdLoad.loadRef}: ` +
+      `${pickupLocation} to ${deliveryLocation}`;
+
+    const createdInvoice = await tx.invoice.create({
+      data: {
+        invoiceNumber: `TEMP-${randomUUID()}`,
+        truckerId,
+        consultantId: user.id,
+        loadId: createdLoad.id,
+        amountCents: invoiceAmountCents,
+        description,
+        notes:
+          `Load rate: ${rate.toFixed(2)}. ` +
+          `Commission: ${(commissionBps / 100).toFixed(2)}%.`,
+        status: "SENT",
+        sentAt: new Date(),
+        isFirstInvoice: existingInvoiceCount === 0,
+        items: {
+          create: {
+            description,
+            quantity: 1,
+            unitCents: invoiceAmountCents,
+            totalCents: invoiceAmountCents
+          }
+        }
+      }
+    });
+
+    await tx.invoice.update({
+      where: { id: createdInvoice.id },
+      data: {
+        invoiceNumber: invoiceNumber(createdInvoice.id)
+      }
+    });
+
+    await tx.notification.createMany({
+      data: [
+        {
+          userId: trucker.userId,
+          title: "New load assigned",
+          message:
+            `${createdLoad.loadRef} was added to your portal.`,
+          url: `/portal/loads?tab=scheduled`
+        },
+        {
+          userId: trucker.userId,
+          title: "New invoice ready",
+          message:
+            `${invoiceNumber(createdInvoice.id)} is ready for payment.`,
+          url:
+            `/portal/invoices/${createdInvoice.id}/pay`
+        }
+      ]
+    });
+
+    return {
+      load: createdLoad,
+      invoice: createdInvoice
+    };
   });
 
-  await audit(user.id, "LOAD_CREATED", "Load", load.id);
+  const load = result.load;
+
+  await audit(
+    user.id,
+    "LOAD_CREATED_WITH_INVOICE",
+    "Load",
+    load.id,
+    null,
+    {
+      invoiceId: result.invoice.id,
+      invoiceAmountCents
+    }
+  );
   revalidatePath("/consultant/loads");
   revalidatePath("/portal/loads");
-  redirect("/consultant/loads?success=Load+entry+created.");
+  revalidatePath("/consultant/invoices");
+  revalidatePath("/portal/invoices");
+  revalidatePath("/portal/dashboard");
+  redirect("/consultant/loads?tab=scheduled&success=Load+and+invoice+created.");
 }
 
 export async function updateLoadStatusAction(formData: FormData) {
@@ -149,3 +249,4 @@ export async function uploadLoadDocumentAction(formData: FormData) {
   revalidatePath("/portal/loads");
   redirect("/consultant/loads?success=Load+document+uploaded.");
 }
+

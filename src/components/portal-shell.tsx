@@ -176,7 +176,7 @@ export async function PortalShell({
                 <strong>Connect with T2F</strong>
                 <small>Stay connected with our team for updates and support.</small>
               </span>
-              <span className="sidebar-action-arrow">›</span>
+              <span className="sidebar-action-arrow">&#8250;</span>
             </a>
 
             <Link className="sidebar-help-card" href="/portal/support">
@@ -281,7 +281,7 @@ export async function PortalShell({
               <details className="user-menu-details">
                 <summary className="top-user-summary">
                   <span className="top-user-avatar">{(user.username || user.name).slice(0, 1).toUpperCase()}</span>
-                  <span className="top-user-chevron">⌄</span>
+                  <span className="top-user-chevron">&#8964;</span>
                 </summary>
                 <div className="card top-user-menu">
                   <strong>{user.username || user.name}</strong>

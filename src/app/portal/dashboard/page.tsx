@@ -77,7 +77,7 @@ function Trend({ value }: { value: number }) {
   const positive = value >= 0;
   return (
     <span className={`metric-trend ${positive ? "positive" : "negative"}`}>
-      <span aria-hidden="true">{positive ? "â†‘" : "â†“"}</span>
+      <span aria-hidden="true">{positive ? "\u2191" : "\u2193"}</span>
       {Math.abs(value).toFixed(1)}% <small>vs previous period</small>
     </span>
   );
@@ -833,8 +833,8 @@ const journey = [
           <details className="dashboard-date-filter dashboard-date-filter-fix">
             <summary>
               <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg>
-              <span>{shortDate(selectedRange.start)} â€“ {shortDate(selectedRange.end)}</span>
-              <span aria-hidden="true">âŒ„</span>
+              <span>{shortDate(selectedRange.start)} &ndash; {shortDate(selectedRange.end)}</span>
+              <span aria-hidden="true">&#8964;</span>
             </summary>
             <form className="dashboard-date-popover" method="get">
               <label>From<input type="date" name="from" defaultValue={query.from} /></label>
@@ -890,7 +890,7 @@ const journey = [
           <div className="journey-segment" key={step.label}>
             <Link className={`journey-step ${step.complete ? "complete" : ""} ${step.current ? "current" : ""}`} href={step.href}>
               <span className="journey-icon" aria-hidden="true">
-                {step.complete ? "âœ“" : index === 1 ? "â—" : index === 2 ? "â–¤" : "âš‘"}
+                {step.complete ? "\u2713" : index === 1 ? "\u25CF" : index === 2 ? "\u25A4" : "\u2691"}
               </span>
               <span>
                 <strong>{step.label}</strong>
@@ -914,17 +914,17 @@ const journey = [
         <Link className="dashboard-quick-card chat" href="/portal/chat">
           <span className="quick-icon"><QuickIcon kind="chat" /></span>
           <span><strong>Chat</strong><small>Discuss current or upcoming loads with your dispatcher.</small></span>
-          <b aria-hidden="true">â€º</b>
+          <b aria-hidden="true">&#8250;</b>
         </Link>
         <Link className="dashboard-quick-card documents" href="/portal/documents">
           <span className="quick-icon"><QuickIcon kind="documents" /></span>
           <span><strong>Documents</strong><small>{missingDocuments ? `${missingDocuments} required file${missingDocuments === 1 ? "" : "s"} missing. Upload them to continue onboarding.` : "All required documents are complete."}</small></span>
-          <b aria-hidden="true">â€º</b>
+          <b aria-hidden="true">&#8250;</b>
         </Link>
         <Link className="dashboard-quick-card invoices" href="/portal/invoices">
           <span className="quick-icon"><QuickIcon kind="invoices" /></span>
-          <span><strong>Invoices</strong><small>{dueInvoiceCount ? `${dueInvoiceCount} due Â· ${money(dueInvoiceTotal._sum.amountCents || 0)}. Review your billing status.` : "No due invoices. Your billing is up to date."}</small></span>
-          <b aria-hidden="true">â€º</b>
+          <span><strong>Invoices</strong><small>{dueInvoiceCount ? `${dueInvoiceCount} due · ${money(dueInvoiceTotal._sum.amountCents || 0)}. Review your billing status.` : "No due invoices. Your billing is up to date."}</small></span>
+          <b aria-hidden="true">&#8250;</b>
         </Link>
       </section>
 
