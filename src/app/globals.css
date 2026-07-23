@@ -935,3 +935,243 @@ html.sidebar-open,html.sidebar-open body{overflow:hidden!important;touch-action:
     min-width: 40px !important;
   }
 }
+
+/* ===== Other Documents Add/Edit Flow ===== */
+
+.add-other-document-card {
+  width: 100%;
+  min-height: 118px;
+  display: grid;
+  grid-template-columns: 58px minmax(0,1fr) auto;
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 18px;
+  text-align: left;
+  color: #fff;
+  cursor: pointer;
+  transition: .2s ease;
+}
+
+.add-other-document-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(49,137,255,.4);
+}
+
+.add-other-document-icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  background: linear-gradient(145deg,#1685ff,#0751ba);
+  font-size: 30px;
+}
+
+.add-other-document-copy strong,
+.add-other-document-copy small {
+  display: block;
+}
+
+.add-other-document-copy strong {
+  font-size: 16px;
+}
+
+.add-other-document-copy small {
+  margin-top: 5px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.add-other-document-arrow {
+  color: #5da5ff;
+  font-size: 28px;
+}
+
+.other-document-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 220;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(0,6,18,.78);
+  backdrop-filter: blur(8px);
+}
+
+.other-document-modal {
+  position: relative;
+  width: min(760px,100%);
+  max-height: 92dvh;
+  overflow-y: auto;
+  padding: 28px;
+  border: 1px solid rgba(77,143,239,.28);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 100% 0%,rgba(25,113,255,.14),transparent 32%),
+    linear-gradient(145deg,#081d3d,#041226);
+  box-shadow: 0 35px 100px rgba(0,0,0,.5);
+}
+
+.other-document-modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: rgba(255,255,255,.05);
+  color: #fff;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.other-document-modal-heading {
+  margin-bottom: 22px;
+  padding-right: 44px;
+}
+
+.other-document-modal-heading span {
+  color: #5da5ff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.other-document-modal-heading h2 {
+  margin: 6px 0;
+}
+
+.other-document-modal-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.other-document-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.all-other-documents-card {
+  min-width: 0;
+}
+
+.other-document-list {
+  display: grid;
+  gap: 10px;
+}
+
+.other-document-row {
+  display: grid;
+  grid-template-columns: 48px minmax(0,1fr) auto auto;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255,255,255,.025);
+}
+
+.other-document-file-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  background: rgba(25,119,255,.13);
+  color: #5da5ff;
+  font-size: 20px;
+}
+
+.other-document-info {
+  min-width: 0;
+}
+
+.other-document-info strong,
+.other-document-info span,
+.other-document-info small {
+  display: block;
+}
+
+.other-document-info span {
+  margin-top: 3px;
+  color: #a9b9ce;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.other-document-info small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.other-document-actions {
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 760px) {
+  .other-document-row {
+    grid-template-columns: 46px minmax(0,1fr);
+  }
+
+  .other-document-row > .badge {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .other-document-actions {
+    grid-column: 2;
+    width: 100%;
+  }
+
+  .other-document-actions .btn {
+    flex: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .other-document-modal-backdrop {
+    padding: 8px;
+    align-items: end;
+  }
+
+  .other-document-modal {
+    width: 100%;
+    max-height: 94dvh;
+    padding: 22px 16px;
+    border-radius: 20px 20px 0 0;
+  }
+
+  .other-document-modal-actions {
+    position: sticky;
+    bottom: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    padding-top: 12px;
+    background: #06172f;
+  }
+
+  .other-document-modal-actions .btn {
+    width: 100%;
+  }
+
+  .add-other-document-card {
+    grid-template-columns: 48px minmax(0,1fr);
+    padding: 16px;
+  }
+
+  .add-other-document-icon {
+    width: 46px;
+    height: 46px;
+  }
+
+  .add-other-document-arrow {
+    display: none;
+  }
+}

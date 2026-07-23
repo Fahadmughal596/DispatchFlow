@@ -1,13 +1,11 @@
 ﻿import { requireRole } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { documentChecklist } from "@/lib/required-documents";
-import {
-  truckerUploadDocumentAction,
-  truckerUploadOtherDocumentAction
-} from "@/actions/documents";
+import { truckerUploadDocumentAction } from "@/actions/documents";
 import { Flash } from "@/components/flash";
 import { StatusBadge } from "@/components/status-badge";
 import { Pagination } from "@/components/pagination";
+import { OtherDocumentModal } from "@/components/other-document-modal";
 import { PAGE_SIZE, positivePage } from "@/lib/portal-filters";
 import { date } from "@/lib/utils";
 
@@ -28,11 +26,6 @@ export default async function TruckerDocumentsPage({
   const rawChecklist = await documentChecklist(truckerId);
 
   const checklist = [...rawChecklist].sort((a, b) => {
-    const aUploaded = a.document ? 1 : 0;
-    const bUploaded = b.document ? 1 : 0;
-
-    if (aUploaded !== bUploaded) return bUploaded - aUploaded;
-
     const aTime = a.document?.updatedAt
       ? new Date(a.document.updatedAt).getTime()
       : 0;
@@ -56,9 +49,10 @@ export default async function TruckerDocumentsPage({
         uploader: true,
         reviewer: true
       },
-      orderBy: {
-        createdAt: "desc"
-      },
+      orderBy: [
+        { updatedAt: "desc" },
+        { createdAt: "desc" }
+      ],
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE
     }),
@@ -76,13 +70,14 @@ export default async function TruckerDocumentsPage({
         <div>
           <h1>Documents</h1>
           <p>
-            Upload the 3 mandatory records and any additional
-            supporting documents.
+            Upload mandatory records and manage supporting documents
+            from one place.
           </p>
         </div>
 
         <span className="badge badge-orange">
-          {checklist.filter((item) => !item.complete).length} Mandatory Missing
+          {checklist.filter((item) => !item.complete).length}
+          {" "}Mandatory Missing
         </span>
       </div>
 
@@ -102,12 +97,13 @@ export default async function TruckerDocumentsPage({
         <div className="grid grid-2 document-card-grid">
           {checklist.map((item) => {
             const isMcPermit = item.type === "MC Permit";
-            const isCoi = item.type === "Certificate of Insurance (COI)";
+            const isCoi =
+              item.type === "Certificate of Insurance (COI)";
             const isDriverLicense =
               item.type === "Driver's License";
 
             return (
-              <div
+              <article
                 className="card document-upload-card"
                 key={item.type}
               >
@@ -126,7 +122,7 @@ export default async function TruckerDocumentsPage({
                 {item.document ? (
                   <div className="detail-list">
                     <div className="detail">
-                      <span>Uploaded by</span>
+                      <span>Uploaded By</span>
                       <strong>
                         {item.document.uploader.name}
                       </strong>
@@ -232,12 +228,12 @@ export default async function TruckerDocumentsPage({
                         className="btn btn-secondary"
                         href={`/api/documents/${item.document.id}`}
                       >
-                        Open
+                        View
                       </a>
                     ) : null}
                   </div>
                 </form>
-              </div>
+              </article>
             );
           })}
         </div>
@@ -248,113 +244,88 @@ export default async function TruckerDocumentsPage({
           <div>
             <span>Optional</span>
             <h2>Other Documents</h2>
-            <p>
-              Add W-9, Factoring NOA, voided check, permits or
-              custom files.
-            </p>
+            <p>Add, view and edit supporting documents.</p>
           </div>
         </div>
 
-        <div className="card optional-document-form">
-          <form action={truckerUploadOtherDocumentAction}>
-            <div className="form-grid">
-              <div className="field">
-                <label>Document Title</label>
-                <input
-                  name="documentTitle"
-                  placeholder="e.g. W-9, Factoring NOA"
-                  required
-                />
-              </div>
+        <OtherDocumentModal triggerStyle="card" />
 
-              <div className="field">
-                <label>Reference Number</label>
-                <input name="documentNumber" />
-              </div>
-
-              <div className="field">
-                <label>Issuing Authority</label>
-                <input name="issuingAuthority" />
-              </div>
-
-              <div className="field">
-                <label>Expiry Date</label>
-                <input name="expiresAt" type="date" />
-              </div>
+        <div className="card all-other-documents-card">
+          <div className="card-title">
+            <div>
+              <h3>All Other Documents</h3>
+              <p>
+                Recently added or edited documents appear first.
+              </p>
             </div>
 
-            <div className="field">
-              <label>Notes</label>
-              <textarea name="notes" />
-            </div>
+            <span className="badge badge-blue">
+              {totalOther} Documents
+            </span>
+          </div>
 
-            <div className="field">
-              <label>File</label>
-              <input
-                name="file"
-                type="file"
-                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp"
-                required
-              />
-            </div>
+          <div className="other-document-list">
+            {otherDocuments.map((document) => (
+              <article
+                className="other-document-row"
+                key={document.id}
+              >
+                <div className="other-document-file-icon">
+                  ↗
+                </div>
 
-            <button className="btn btn-primary">
-              Add Another Document
-            </button>
-          </form>
-        </div>
+                <div className="other-document-info">
+                  <strong>
+                    {document.documentTitle ||
+                      "Other Document"}
+                  </strong>
 
-        <div className="card document-list-card">
-          <div className="table-wrap">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Title</th>
-                  <th>File</th>
-                  <th>Uploaded By</th>
-                  <th>Expiry</th>
-                  <th>Status</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
+                  <span>{document.originalName}</span>
 
-              <tbody>
-                {otherDocuments.map((document) => (
-                  <tr key={document.id}>
-                    <td>
-                      <strong>
-                        {document.documentTitle ||
-                          "Other Document"}
-                      </strong>
-                    </td>
-                    <td>{document.originalName}</td>
-                    <td>{document.uploader.name}</td>
-                    <td>{date(document.expiresAt)}</td>
-                    <td>
-                      <StatusBadge value={document.status} />
-                    </td>
-                    <td>
-                      <a
-                        className="btn btn-secondary btn-sm"
-                        href={`/api/documents/${document.id}`}
-                      >
-                        Open
-                      </a>
-                    </td>
-                  </tr>
-                ))}
+                  <small>
+                    Uploaded by {document.uploader.name}
+                    {" • "}
+                    Expiry: {date(document.expiresAt)}
+                  </small>
+                </div>
 
-                {!otherDocuments.length ? (
-                  <tr>
-                    <td colSpan={6}>
-                      <div className="empty">
-                        No optional documents added yet.
-                      </div>
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
+                <StatusBadge value={document.status} />
+
+                <div className="actions other-document-actions">
+                  <a
+                    className="btn btn-primary btn-sm"
+                    href={`/api/documents/${document.id}`}
+                  >
+                    View
+                  </a>
+
+                  <OtherDocumentModal
+                    document={{
+                      id: document.id,
+                      title:
+                        document.documentTitle || "Other Document",
+                      documentNumber:
+                        document.documentNumber || "",
+                      issuingAuthority:
+                        document.issuingAuthority || "",
+                      expiresAt: document.expiresAt
+                        ? new Date(document.expiresAt)
+                            .toISOString()
+                            .slice(0, 10)
+                        : "",
+                      notes: document.notes || "",
+                      originalName: document.originalName
+                    }}
+                  />
+                </div>
+              </article>
+            ))}
+
+            {!otherDocuments.length ? (
+              <div className="empty">
+                No optional documents added yet.
+              </div>
+            ) : null}
           </div>
 
           <Pagination
@@ -368,4 +339,3 @@ export default async function TruckerDocumentsPage({
     </>
   );
 }
-

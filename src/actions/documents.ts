@@ -136,19 +136,164 @@ export async function truckerUploadDocumentAction(formData: FormData) {
   redirect("/portal/documents?success=Required+document+uploaded.");
 }
 
-export async function truckerUploadOtherDocumentAction(formData: FormData) {
+export async function truckerUploadOtherDocumentAction(
+  formData: FormData
+) {
   const user = await requireUser();
-  if (user.role !== "TRUCKER" || !user.truckerProfile) redirect("/");
-  const file = formData.get("file");
-  if (!(file instanceof File)) redirect("/portal/documents?error=Choose+a+file.");
-  try {
-    const document = await createOtherDocument(user.id, user.truckerProfile.id, Object.fromEntries(formData), file);
-    await notifyDocumentUpload(user.id, { ...user.truckerProfile, user: { name: user.name } }, document, false);
-  } catch (error) {
-    redirect(`/portal/documents?error=${encodeURIComponent(error instanceof Error ? error.message : "Document upload failed.")}`);
+
+  if (user.role !== "TRUCKER" || !user.truckerProfile) {
+    redirect("/");
   }
+
+  const file = formData.get("file");
+
+  if (!(file instanceof File) || file.size === 0) {
+    redirect("/portal/documents?error=Choose+a+file.");
+  }
+
+  try {
+    const document = await createOtherDocument(
+      user.id,
+      user.truckerProfile.id,
+      Object.fromEntries(formData),
+      file
+    );
+
+    await notifyDocumentUpload(
+      user.id,
+      {
+        ...user.truckerProfile,
+        user: { name: user.name }
+      },
+      document,
+      false
+    );
+  } catch (error) {
+    redirect(
+      `/portal/documents?error=${encodeURIComponent(
+        error instanceof Error
+          ? error.message
+          : "Document upload failed."
+      )}`
+    );
+  }
+
   revalidatePath("/portal/documents");
-  redirect("/portal/documents?success=Additional+document+uploaded.");
+
+  redirect(
+    "/portal/documents?page=1&success=Document+uploaded."
+  );
+}
+
+export async function truckerUpdateOtherDocumentAction(
+  formData: FormData
+) {
+  const user = await requireUser();
+
+  if (user.role !== "TRUCKER" || !user.truckerProfile) {
+    redirect("/");
+  }
+
+  const documentId = Number(formData.get("documentId"));
+
+  if (!Number.isInteger(documentId) || documentId <= 0) {
+    redirect("/portal/documents?error=Invalid+document.");
+  }
+
+  const parsed = otherMetadataSchema.safeParse(
+    Object.fromEntries(formData)
+  );
+
+  if (!parsed.success) {
+    redirect(
+      "/portal/documents?error=Enter+valid+document+details."
+    );
+  }
+
+  const existing = await db.document.findFirst({
+    where: {
+      id: documentId,
+      truckerId: user.truckerProfile.id,
+      documentRequestId: null
+    }
+  });
+
+  if (!existing) {
+    redirect("/portal/documents?error=Document+not+found.");
+  }
+
+  const submittedFile = formData.get("file");
+
+  const replacementFile =
+    submittedFile instanceof File && submittedFile.size > 0
+      ? submittedFile
+      : null;
+
+  let saved:
+    | Awaited<ReturnType<typeof saveDocumentFile>>
+    | null = null;
+
+  try {
+    if (replacementFile) {
+      saved = await saveDocumentFile(
+        replacementFile,
+        `trucker-documents/${user.truckerProfile.id}/other`
+      );
+    }
+
+    await db.document.update({
+      where: { id: existing.id },
+      data: {
+        documentTitle: parsed.data.documentTitle,
+        documentNumber:
+          parsed.data.documentNumber || null,
+        issuingAuthority:
+          parsed.data.issuingAuthority || null,
+        expiresAt: optionalDate(parsed.data.expiresAt),
+        notes: parsed.data.notes || null,
+        ...(saved
+          ? {
+              originalName: saved.originalName,
+              storagePath: saved.storagePath,
+              mimeType: saved.mimeType,
+              sizeBytes: saved.sizeBytes,
+              status: DocumentStatus.UPLOADED,
+              reviewedById: null,
+              reviewNotes: null
+            }
+          : {})
+      }
+    });
+
+    if (saved) {
+      await deleteStoredFile(existing.storagePath);
+    }
+
+    await audit(
+      user.id,
+      "DOCUMENT_UPDATED",
+      "Document",
+      existing.id
+    );
+  } catch (error) {
+    if (saved) {
+      await deleteStoredFile(saved.storagePath);
+    }
+
+    redirect(
+      `/portal/documents?error=${encodeURIComponent(
+        error instanceof Error
+          ? error.message
+          : "Document update failed."
+      )}`
+    );
+  }
+
+  revalidatePath("/portal/documents");
+
+  redirect(
+    "/portal/documents?page=1&success=Document+updated."
+  );
 }
 
 export async function reviewDocumentAction(formData: FormData) {
