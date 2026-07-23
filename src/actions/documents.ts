@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -38,16 +38,27 @@ async function upsertRequiredDocument(userId: number, truckerId: number, raw: Re
   const existing = await db.document.findUnique({ where: { documentRequestId: request.id } });
   const saved = await saveDocumentFile(file, `trucker-documents/${truckerId}`);
   try {
+    const isMcPermit = parsed.data.type === "MC Permit";
+    const isCoi = parsed.data.type === "Certificate of Insurance (COI)";
+    const isDriverLicense =
+      parsed.data.type === "Driver's License";
+
     const values = {
       truckerId,
       documentRequestId: request.id,
       type: parsed.data.type,
       documentTitle: parsed.data.type,
-      documentNumber: parsed.data.documentNumber || null,
-      issuingAuthority: parsed.data.issuingAuthority || null,
-      issueDate: optionalDate(parsed.data.issueDate),
-      expiresAt: optionalDate(parsed.data.expiresAt),
-      notes: parsed.data.notes || null,
+      documentNumber: isCoi
+        ? parsed.data.documentNumber || null
+        : null,
+      issuingAuthority: null,
+      issueDate: isDriverLicense
+        ? optionalDate(parsed.data.issueDate)
+        : null,
+      expiresAt: isDriverLicense
+        ? optionalDate(parsed.data.expiresAt)
+        : null,
+      notes: null,
       originalName: saved.originalName,
       storagePath: saved.storagePath,
       mimeType: saved.mimeType,
@@ -158,4 +169,6 @@ export async function reviewDocumentAction(formData: FormData) {
   revalidatePath("/consultant/documents");
   revalidatePath("/super-admin/documents");
   revalidatePath("/portal/documents");
+  redirect("/portal/documents?page=1&success=Document+uploaded.");
 }
+
