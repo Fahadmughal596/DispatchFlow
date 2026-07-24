@@ -53,7 +53,7 @@ export default async function AdminLoadsPage({
 
         <div className="table-wrap">
           <table className="table">
-            <thead><tr><th>Load</th><th>Trucker</th><th>Consultant</th><th>Route</th><th>Rate</th><th>Status</th><th>Pickup</th><th>Update</th></tr></thead>
+            <thead><tr><th>Load</th><th>Trucker</th><th>Consultant</th><th>Route</th><th>Rate</th><th>Status</th><th>Pickup</th><th>Actions</th></tr></thead>
             <tbody>
               {loads.map((load) => (
                 <tr key={load.id}>
@@ -65,11 +65,23 @@ export default async function AdminLoadsPage({
                   <td><StatusBadge value={load.status} /></td>
                   <td>{dateTime(load.pickupAt)}</td>
                   <td>
-                    <form className="actions" action={updateLoadStatusAction}>
+                    <div className="actions">
+                      <Link
+                        className="btn btn-primary btn-sm"
+                        href={`/super-admin/loads/${load.id}`}
+                      >
+                        View
+                      </Link>
+
+                      <form
+                        className="actions"
+                        action={updateLoadStatusAction}
+                      >
                       <input type="hidden" name="loadId" value={load.id} />
                       <select name="status" defaultValue={statuses.includes(load.status) ? load.status : "BOOKED"}>{statuses.map((status) => <option key={status}>{status}</option>)}</select>
                       <button className="btn btn-secondary btn-sm">Save</button>
                     </form>
+                    </div>
                   </td>
                 </tr>
               ))}
