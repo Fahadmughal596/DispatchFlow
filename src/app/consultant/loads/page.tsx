@@ -44,11 +44,7 @@ export default async function ConsultantLoadsPage({
     db.load.count({ where }),
     db.load.findMany({
       where,
-      include: {
-        trucker: { include: { user: true } },
-        documents: true,
-        invoice: { include: { payment: true } }
-      },
+      include: { trucker: { include: { user: true } }, documents: true },
       orderBy: [{ pickupAt: "desc" }, { createdAt: "desc" }],
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE
@@ -126,7 +122,7 @@ export default async function ConsultantLoadsPage({
 
         <div className="table-wrap" style={{ marginTop: 16 }}>
           <table className="table">
-            <thead><tr><th>Load</th><th>Trucker</th><th>Route</th><th>Rate</th><th>Status</th><th>Pickup</th><th>Documents</th><th>Invoice</th><th>Update</th></tr></thead>
+            <thead><tr><th>Load</th><th>Trucker</th><th>Route</th><th>Rate</th><th>Status</th><th>Pickup</th><th>Documents</th><th>Update</th></tr></thead>
             <tbody>
               {loads.map((load) => (
                 <tr key={load.id}>
@@ -146,30 +142,6 @@ export default async function ConsultantLoadsPage({
                     </form>
                   </td>
                   <td>
-                    {load.invoice ? (
-                      <div className="actions">
-                        <div>
-                          <strong>{load.invoice.invoiceNumber}</strong>
-                          <div className="text-small text-muted">
-                            <StatusBadge value={load.invoice.status} />
-                          </div>
-                        </div>
-
-                        <Link
-                          className="btn btn-secondary btn-sm"
-                          href={`/print/invoice/${load.invoice.id}`}
-                        >
-                          View
-                        </Link>
-                      </div>
-                    ) : (
-                      <span className="text-small text-muted">
-                        No invoice
-                      </span>
-                    )}
-                  </td>
-
-                  <td>
                     <form className="actions" action={updateLoadStatusAction}>
                       <input type="hidden" name="loadId" value={load.id} />
                       <select name="status" defaultValue={statuses.includes(load.status) ? load.status : "BOOKED"}>{statuses.map((status) => <option key={status}>{status}</option>)}</select>
@@ -178,7 +150,7 @@ export default async function ConsultantLoadsPage({
                   </td>
                 </tr>
               ))}
-              {!loads.length ? <tr><td colSpan={9}><div className="empty">No loads match this tab and filter.</div></td></tr> : null}
+              {!loads.length ? <tr><td colSpan={8}><div className="empty">No loads match this tab and filter.</div></td></tr> : null}
             </tbody>
           </table>
         </div>

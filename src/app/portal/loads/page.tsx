@@ -36,10 +36,7 @@ export default async function TruckerLoadsPage({
     db.load.count({ where }),
     db.load.findMany({
       where,
-      include: {
-        documents: true,
-        invoice: { include: { payment: true } }
-      },
+      include: { documents: true },
       orderBy: [{ pickupAt: "desc" }, { createdAt: "desc" }],
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE
@@ -107,7 +104,7 @@ export default async function TruckerLoadsPage({
 
         <div className="table-wrap" style={{ marginTop: 16 }}>
           <table className="table">
-            <thead><tr><th>Load</th><th>Pickup</th><th>Delivery</th><th>Rate</th><th>Broker</th><th>Status</th><th>Documents</th><th>Invoice</th></tr></thead>
+            <thead><tr><th>Load</th><th>Pickup</th><th>Delivery</th><th>Rate</th><th>Broker</th><th>Status</th><th>Documents</th></tr></thead>
             <tbody>
               {loads.map((load) => (
                 <tr key={load.id}>
@@ -125,41 +122,9 @@ export default async function TruckerLoadsPage({
                       {!load.documents.length ? "None" : null}
                     </div>
                   </td>
-
-                  <td>
-                    {load.invoice ? (
-                      <div className="actions">
-                        <Link
-                          className="btn btn-secondary btn-sm"
-                          href={`/print/invoice/${load.invoice.id}`}
-                        >
-                          View Invoice
-                        </Link>
-
-                        {["SENT", "VIEWED", "UNPAID", "OVERDUE"].includes(
-                          load.invoice.status
-                        ) ? (
-                          <Link
-                            className="btn btn-primary btn-sm"
-                            href={`/portal/invoices/${load.invoice.id}/pay`}
-                          >
-                            Pay Invoice
-                          </Link>
-                        ) : null}
-
-                        {load.invoice.status === "PAID" ? (
-                          <StatusBadge value="PAID" />
-                        ) : null}
-                      </div>
-                    ) : (
-                      <span className="text-small text-muted">
-                        No invoice
-                      </span>
-                    )}
-                  </td>
                 </tr>
               ))}
-              {!loads.length ? <tr><td colSpan={8}><div className="empty">No loads match this tab and filter.</div></td></tr> : null}
+              {!loads.length ? <tr><td colSpan={7}><div className="empty">No loads match this tab and filter.</div></td></tr> : null}
             </tbody>
           </table>
         </div>

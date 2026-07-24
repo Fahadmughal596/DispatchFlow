@@ -1,5 +1,6 @@
 import { requireRole } from "@/lib/auth";
 import { db } from "@/lib/db";
+import { approveInvoiceAction } from "@/actions/invoices";
 import { StatusBadge } from "@/components/status-badge";
 import { date, money } from "@/lib/utils";
 
@@ -16,7 +17,7 @@ export default async function AdminInvoicesPage() {
 
   return (
     <>
-      <div className="page-header"><div><h1>Invoices</h1><p>Monitor all dispatcher-created invoices and payment statuses.</p></div></div>
+      <div className="page-header"><div><h1>Invoices</h1><p>Approve, send and monitor all portal invoices.</p></div></div>
       <div className="card">
         <div className="table-wrap">
           <table className="table">
@@ -31,6 +32,12 @@ export default async function AdminInvoicesPage() {
                   <td>{date(invoice.dueDate)}</td>
                   <td><StatusBadge value={invoice.status} /></td>
                   <td className="actions">
+                    {["DRAFT", "PENDING_APPROVAL"].includes(invoice.status) ? (
+                      <form action={approveInvoiceAction}>
+                        <input type="hidden" name="invoiceId" value={invoice.id} />
+                        <button className="btn btn-primary btn-sm">Approve & Send</button>
+                      </form>
+                    ) : null}
                     <a className="btn btn-secondary btn-sm" href={`/print/invoice/${invoice.id}`}>Print</a>
                   </td>
                 </tr>

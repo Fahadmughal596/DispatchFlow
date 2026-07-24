@@ -65,8 +65,7 @@ export async function createInvoiceAction(formData: FormData) {
         dueDate: dueDateRaw ? new Date(`${dueDateRaw}T23:59:59`) : null,
         isFirstInvoice,
         agingStartsAt: isFirstInvoice ? addMonths(createdAt, 1) : null,
-        status: "SENT",
-        sentAt: new Date(),
+        status: "PENDING_APPROVAL",
         items: {
           create: {
             description,
@@ -81,14 +80,14 @@ export async function createInvoiceAction(formData: FormData) {
     if (trucker.lead) {
       await tx.lead.update({
         where: { id: trucker.lead.id },
-        data: { currentStatus: "INVOICE_SENT" }
+        data: { currentStatus: "PENDING_INVOICE" }
       });
       await tx.leadStatusHistory.create({
         data: {
           leadId: trucker.lead.id,
-          status: "INVOICE_SENT",
+          status: "PENDING_INVOICE",
           changedBy: user.id,
-          note: "Invoice created and sent directly to the trucker."
+          note: "Invoice submitted and pending approval."
         }
       });
     }
@@ -101,25 +100,21 @@ export async function createInvoiceAction(formData: FormData) {
     data: { invoiceNumber: invoiceNumber(invoice.id) }
   });
 
-  await db.notification.create({
-    data: {
-      userId: trucker.userId,
-      title: "New invoice ready",
-      message:
-        `${invoiceNumber(invoice.id)} is ready for payment.`,
-      url: `/portal/invoices/${invoice.id}/pay`
-    }
-  });
+  const admins = await db.user.findMany({ where: { role: "SUPER_ADMIN" }, select: { id: true } });
+  if (admins.length) {
+    await db.notification.createMany({
+      data: admins.map((admin) => ({
+        userId: admin.id,
+        title: "Invoice awaiting approval",
+        message: `${user.name} submitted ${invoiceNumber(invoice.id)} for approval.`,
+        url: "/super-admin/invoices"
+      }))
+    });
+  }
 
-  await audit(user.id, "INVOICE_CREATED_AND_SENT", "Invoice", invoice.id);
+  await audit(user.id, "INVOICE_DRAFT_CREATED", "Invoice", invoice.id);
   revalidatePath("/consultant/invoices");
-  revalidatePath("/portal/invoices");
-  revalidatePath("/portal/dashboard");
-  revalidatePath("/super-admin/invoices");
-
-  redirect(
-    "/consultant/invoices?success=Invoice+created+and+sent+to+trucker."
-  );
+  redirect("/consultant/invoices?success=Invoice+submitted+for+Super+Admin+approval.");
 }
 
 export async function approveInvoiceAction(formData: FormData) {
@@ -205,26 +200,30 @@ export async function payInvoiceAction(formData: FormData) {
   }
 
   /*
-   * The invoice amount already represents the complete
-   * DispatchFlow commission calculated from the load rate.
+   * The trucker's selected commission rate represents the complete
+   * DispatchFlow commission for this invoice.
    *
    * Example:
-   * Load rate: $2,000
-   * Equipment commission: 4%
-   * Invoice amount: $80
-   *
-   * Dispatcher receives 50% of $80 = $40
-   * Company receives 50% of $80 = $40
+   * 5% total commission = 500 basis points
+   * Dispatcher receives 2.5%
+   * Company receives 2.5%
    */
   const processorFeeCents =
     Math.round(invoice.amountCents * 0.029) + 30;
 
+  const totalCommissionBps =
+    invoice.trucker.selectedCommissionBps ?? 500;
+
+  const totalCommissionCents = Math.round(
+    (invoice.amountCents * totalCommissionBps) / 10000
+  );
+
   const dispatcherCommissionCents = Math.floor(
-    invoice.amountCents / 2
+    totalCommissionCents / 2
   );
 
   const companyCommissionCents =
-    invoice.amountCents - dispatcherCommissionCents;
+    totalCommissionCents - dispatcherCommissionCents;
 
   const companyNetCents = Math.max(
     0,
