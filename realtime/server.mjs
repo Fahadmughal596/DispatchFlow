@@ -131,6 +131,109 @@ io.on("connection", (socket) => {
     userId: user.id
   });
 
+
+  socket.on("conversation:join", async (data, acknowledge) => {
+    const fail = (message) => {
+      if (typeof acknowledge === "function") {
+        acknowledge({
+          ok: false,
+          error: message
+        });
+      }
+    };
+
+    const token =
+      typeof data?.token === "string"
+        ? data.token
+        : "";
+
+    if (!token) {
+      fail("Missing conversation token.");
+      return;
+    }
+
+    try {
+      const { payload } = await jwtVerify(
+        token,
+        socketSecret,
+        {
+          issuer,
+          audience
+        }
+      );
+
+      const conversationId = Number(
+        payload.conversationId
+      );
+
+      const tokenUserId = Number(payload.sub);
+      const tokenRole = String(payload.role || "");
+      const purpose = String(payload.purpose || "");
+
+      if (
+        purpose !== "conversation-room" ||
+        !Number.isInteger(conversationId) ||
+        conversationId <= 0 ||
+        tokenUserId !== user.id ||
+        tokenRole !== user.role
+      ) {
+        fail("Unauthorized conversation.");
+        return;
+      }
+
+      const roomName =
+        `conversation:${conversationId}`;
+
+      await socket.join(roomName);
+
+      console.log(
+        `[socket] user=${user.id} joined room=${roomName}`
+      );
+
+      if (typeof acknowledge === "function") {
+        acknowledge({
+          ok: true,
+          conversationId
+        });
+      }
+    } catch {
+      fail(
+        "Invalid or expired conversation token."
+      );
+    }
+  });
+
+  socket.on("conversation:leave", async (data, acknowledge) => {
+    const conversationId = Number(
+      data?.conversationId
+    );
+
+    if (
+      !Number.isInteger(conversationId) ||
+      conversationId <= 0
+    ) {
+      if (typeof acknowledge === "function") {
+        acknowledge({
+          ok: false,
+          error: "Invalid conversation."
+        });
+      }
+
+      return;
+    }
+
+    await socket.leave(
+      `conversation:${conversationId}`
+    );
+
+    if (typeof acknowledge === "function") {
+      acknowledge({
+        ok: true,
+        conversationId
+      });
+    }
+  });
+
   socket.on("client:ping", (acknowledge) => {
     if (typeof acknowledge === "function") {
       acknowledge({
