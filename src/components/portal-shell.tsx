@@ -9,6 +9,7 @@ import { ROLE_LABEL } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { missingDocumentSummary } from "@/lib/required-documents";
 import { money } from "@/lib/utils";
+import { RealtimeStatus } from "@/components/realtime-status";
 
 function roleItems(role: Role, missingCount: number): NavItem[] {
   if (role === "TRUCKER") {
@@ -214,6 +215,7 @@ export async function PortalShell({
           </div>
 
           <div className="top-actions">
+            <RealtimeStatus />
             <details className="notification-details">
               <summary
                 className="notification-btn"
