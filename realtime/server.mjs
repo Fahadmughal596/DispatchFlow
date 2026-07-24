@@ -1,4 +1,5 @@
 ﻿import { createServer } from "node:http";
+import { timingSafeEqual } from "node:crypto";
 import { Server } from "socket.io";
 import { jwtVerify } from "jose";
 
@@ -18,6 +19,45 @@ if (!socketSecretValue || socketSecretValue.length < 32) {
 
 const socketSecret = new TextEncoder().encode(socketSecretValue);
 
+const internalSecretValue =
+  process.env.REALTIME_INTERNAL_SECRET?.trim();
+
+if (!internalSecretValue || internalSecretValue.length < 32) {
+  console.error(
+    "REALTIME_INTERNAL_SECRET is missing or contains fewer than 32 characters."
+  );
+  process.exit(1);
+}
+
+function secretsMatch(provided, expected) {
+  const providedBuffer = Buffer.from(provided);
+  const expectedBuffer = Buffer.from(expected);
+
+  if (providedBuffer.length !== expectedBuffer.length) {
+    return false;
+  }
+
+  return timingSafeEqual(
+    providedBuffer,
+    expectedBuffer
+  );
+}
+
+async function readJsonBody(request) {
+  let raw = "";
+
+  for await (const chunk of request) {
+    raw += chunk.toString("utf8");
+
+    if (raw.length > 1_000_000) {
+      throw new Error("Payload too large.");
+    }
+  }
+
+  return JSON.parse(raw || "{}");
+}
+
+
 const allowedRoles = new Set([
   "TRUCKER",
   "CONSULTANT_DISPATCHER",
@@ -33,7 +73,7 @@ const allowedOrigins = (
   .map((origin) => origin.trim().replace(/\/$/, ""))
   .filter(Boolean);
 
-const httpServer = createServer((request, response) => {
+const httpServer = createServer(async (request, response) => {
   if (request.url === "/health") {
     response.writeHead(200, {
       "content-type": "application/json",
@@ -47,6 +87,129 @@ const httpServer = createServer((request, response) => {
         timestamp: new Date().toISOString()
       })
     );
+
+    return;
+  }
+
+
+  if (
+    request.method === "POST" &&
+    request.url === "/internal/publish"
+  ) {
+    const secretHeader =
+      request.headers["x-realtime-secret"];
+
+    const providedSecret = Array.isArray(secretHeader)
+      ? secretHeader[0]
+      : secretHeader;
+
+    if (
+      !providedSecret ||
+      !secretsMatch(
+        providedSecret,
+        internalSecretValue
+      )
+    ) {
+      response.writeHead(401, {
+        "content-type": "application/json",
+        "cache-control": "no-store"
+      });
+
+      response.end(
+        JSON.stringify({
+          error: "Unauthorized"
+        })
+      );
+
+      return;
+    }
+
+    try {
+      const payload = await readJsonBody(request);
+      const conversationId = Number(
+        payload?.conversationId
+      );
+
+      const incomingMessage = payload?.message;
+
+      const message = {
+        id: Number(incomingMessage?.id),
+        body: String(incomingMessage?.body || ""),
+        sentAt: String(incomingMessage?.sentAt || ""),
+        senderId: Number(incomingMessage?.senderId),
+        senderName: String(
+          incomingMessage?.senderName || ""
+        ),
+        attachments: Array.isArray(
+          incomingMessage?.attachments
+        )
+          ? incomingMessage.attachments
+          : []
+      };
+
+      const valid =
+        Number.isInteger(conversationId) &&
+        conversationId > 0 &&
+        Number.isInteger(message.id) &&
+        message.id > 0 &&
+        Number.isInteger(message.senderId) &&
+        message.senderId > 0 &&
+        message.body.length <= 5000 &&
+        message.senderName.length > 0 &&
+        message.senderName.length <= 200 &&
+        !Number.isNaN(Date.parse(message.sentAt)) &&
+        message.attachments.length <= 10;
+
+      if (!valid) {
+        response.writeHead(400, {
+          "content-type": "application/json",
+          "cache-control": "no-store"
+        });
+
+        response.end(
+          JSON.stringify({
+            error: "Invalid realtime payload."
+          })
+        );
+
+        return;
+      }
+
+      io.to(
+        `conversation:${conversationId}`
+      ).emit(
+        "chat:message",
+        message
+      );
+
+      response.writeHead(202, {
+        "content-type": "application/json",
+        "cache-control": "no-store"
+      });
+
+      response.end(
+        JSON.stringify({
+          ok: true,
+          conversationId
+        })
+      );
+    } catch (error) {
+      console.error(
+        "[internal-publish]",
+        error
+      );
+
+      response.writeHead(400, {
+        "content-type": "application/json",
+        "cache-control": "no-store"
+      });
+
+      response.end(
+        JSON.stringify({
+          error: "Invalid request."
+        })
+      );
+    }
 
     return;
   }

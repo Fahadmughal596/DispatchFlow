@@ -10,6 +10,9 @@ const protectedHeaders = [
 ];
 
 const nextConfig: NextConfig = {
+  turbopack: {
+    root: process.cwd()
+  },
   experimental: {
     cpus: 1,
     serverActions: {

@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { saveDocumentFile } from "@/lib/files";
 import { validateContactMade } from "@/lib/lead-status";
 import { audit } from "@/lib/audit";
+import { publishRealtimeMessage } from "@/lib/realtime-publisher";
 
 export async function sendMessageAction(formData: FormData) {
   const user = await requireUser();
@@ -55,6 +56,14 @@ export async function sendMessageAction(formData: FormData) {
             }
           }
         : undefined
+    },
+    include: {
+      sender: {
+        select: {
+          name: true
+        }
+      },
+      attachments: true
     }
   });
 
@@ -72,6 +81,25 @@ export async function sendMessageAction(formData: FormData) {
       }
     })
   ]);
+
+  await publishRealtimeMessage(
+    conversationId,
+    {
+      id: message.id,
+      body: message.body,
+      sentAt: message.sentAt.toISOString(),
+      senderId: message.senderId,
+      senderName: message.sender.name,
+      attachments: message.attachments.map((item) => ({
+        id: item.id,
+        kind: item.kind,
+        originalName: item.originalName,
+        mimeType: item.mimeType,
+        sizeBytes: item.sizeBytes,
+        url: `/api/chat-attachments/${item.id}`
+      }))
+    }
+  );
 
   await validateContactMade(conversationId, user.id);
   await audit(user.id, hasAttachment ? "CHAT_ATTACHMENT_SENT" : "CHAT_MESSAGE_SENT", "Message", message.id);
